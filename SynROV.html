@@ -1,0 +1,462 @@
+;<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SynROV Console — Rewritten</title>
+  <style>
+    :root{ --side:#f3f3f3; --bg:#1e1e1e; --primary:#46a0ff; --text:#111; --ok:#38a169; --warn:#d69e2e; --err:#e53e3e; }
+    *{ box-sizing:border-box; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif }
+    html,body{ height:100%; margin:0 }
+    body{ display:flex; min-height:100vh; background:var(--bg); color:#ddd }
+
+    /* Sidebar */
+    #sidebar{ width:304px; background:var(--side); color:var(--text); padding:1.2rem; overflow-y:auto; border-right:1px solid #ccc; display:flex; flex-direction:column; gap:1rem }
+    h1{ margin:0 0 .6rem; font-size:1.2rem; font-weight:700 }
+    h2{ margin:.2rem 0 .6rem; font-size:1.05rem }
+    .servo label{ display:flex; justify-content:space-between; font-size:.85rem }
+    input[type="range"]{ width:100% }
+    .status{ margin-top:.4rem; font-size:.82rem; display:grid; gap:.25rem }
+    .status .row{ display:flex; align-items:center; gap:.5rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+    .dot{ display:inline-block; width:.6rem; height:.6rem; border-radius:50% }
+    .dot.ok{ background:#15c26b } .dot.warn{ background:#ffbe3c } .dot.err{ background:#ff5a5a } .dot.off{ background:#9aa0a6 }
+
+    button{ padding:.65rem .8rem; font-weight:600; background:#0077cc; color:#fff; border:none; border-radius:8px; cursor:pointer; transition:transform .06s ease, opacity .2s ease }
+    button:hover{ opacity:.92 } button:active{ transform:translateY(1px) }
+    button:disabled{ opacity:.5; cursor:not-allowed }
+    button.reconnect{ background:#ff8c00 }
+    .action-buttons button{ background:#4caf50; width:100%; margin-bottom:6px }
+    .camera-buttons{ display:grid; grid-template-columns:1fr 1fr; gap:6px }
+    .camera-buttons button{ background:#556cd6; width:100% }
+
+    /* Main */
+    #main{ flex:1; padding:1.2rem; display:flex; flex-direction:column; gap:1rem; overflow-y:auto }
+    .panel{ background:#0003; border:1px solid #444; border-radius:10px; padding:.9rem; position:relative }
+    .panel h3{ margin:0 0 .6rem; font-size:.98rem; font-weight:700 }
+
+    #sensorGrid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:.5rem }
+    .cell{ font:600 .82rem/1.4 ui-monospace,Menlo,Consolas,monospace; color:#8cf; background:#0b1621; border:1px solid #233647; border-radius:6px; padding:.45rem .55rem }
+
+    .raw{ position:absolute; bottom:.8rem; left:.9rem; right:.9rem; font:.74rem/1.2 ui-monospace,monospace; color:#aab; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+    #liveView{ max-height:360px; width:100%; object-fit:contain; border-radius:10px; border:1px solid #555; background:#111 }
+    .pills{ display:flex; gap:.5rem; flex-wrap:wrap }
+    .pill{ display:inline-flex; align-items:center; gap:.35rem; padding:.22rem .55rem; border:1px solid #666; border-radius:999px; font:.78rem/1 ui-monospace,monospace; color:#eee; background:#222 }
+
+    .note{ font-size:.8rem; color:#cbd5e1 }
+    .kbd{ padding:.05rem .3rem; border:1px solid #565f6b; border-bottom-width:2px; border-radius:4px; background:#111826; color:#cbd5e1; font-family:ui-monospace,monospace; font-size:.78rem }
+  </style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem">
+      <h1>SynROV Console</h1>
+      <button class="reconnect" id="btnConnect">Connect</button>
+    </div>
+
+    <h2>Servo Controls</h2>
+    <div id="controls"></div>
+
+    <h2>Toggles</h2>
+    <button data-toggle="leap">Leap Motion</button>
+    <button data-toggle="joystick">Joystick</button>
+    <button data-toggle="collision">Collision</button>
+    <button data-toggle="trace">Trace</button>
+
+    <h2>Actions</h2>
+    <div class="action-buttons">
+      <button data-action="1">Action 1</button>
+      <button data-action="2">Action 2</button>
+      <button data-action="3">Action 3</button>
+      <button data-action="4">Action 4</button>
+      <button data-action="5">Action 5</button>
+    </div>
+
+    <h2>Camera Control</h2>
+    <div class="camera-buttons">
+      <button data-camera="up">↑ Up</button>
+      <button data-camera="zoom_in">Zoom In +</button>
+      <button data-camera="left">← Left</button>
+      <button data-camera="right">Right →</button>
+      <button data-camera="down">↓ Down</button>
+      <button data-camera="zoom_out">Zoom Out -</button>
+    </div>
+
+    <div class="status">
+      <div class="row"><span class="dot off" id="dotWS"></span><span id="wsStatus">WebSocket: Disconnected</span></div>
+      <div class="row"><span class="dot off" id="dotHW"></span><span id="statusFeedback">—</span></div>
+      <div class="row"><span class="dot off"></span><span id="lastStamp">—</span></div>
+      <div class="note">Dica: use <span class="kbd">?port=9001</span> ou <span class="kbd">?ws=ws://host:9000/</span> na URL.</div>
+    </div>
+  </aside>
+
+  <main id="main">
+    <section class="panel">
+      <h3>Sensor Data <small id="sensStamp">(—)</small></h3>
+      <div id="sensorGrid"></div>
+      <div class="raw" id="rawLine"></div>
+    </section>
+
+    <section class="panel" style="max-height:170px;overflow:auto">
+      <h3>Last Known Angles</h3>
+      <div id="angleGrid" class="pills"></div>
+    </section>
+
+    <section class="panel">
+      <h3>Live 3D View</h3>
+      <img id="liveView" alt="Live view" />
+    </section>
+  </main>
+
+  <script>
+  ;(()=>{
+    // =====================
+    // URL helpers
+    // =====================
+    const usp = new URLSearchParams(location.search);
+    const qsWS  = usp.get('ws');
+    const qsPort = usp.get('port');
+
+    const DEFAULT_WS_PORT = 9000;
+    const host = location.hostname || 'localhost';
+    const scheme = location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const WS_URL = qsWS || `${scheme}${host}:${qsPort || DEFAULT_WS_PORT}/`;
+
+    // =====================
+    // DOM refs
+    // =====================
+    const controls       = document.getElementById('controls');
+    const angleGrid      = document.getElementById('angleGrid');
+    const sensorGrid     = document.getElementById('sensorGrid');
+    const sensStamp      = document.getElementById('sensStamp');
+    const rawLine        = document.getElementById('rawLine');
+    const liveView       = document.getElementById('liveView');
+    const wsStatus       = document.getElementById('wsStatus');
+    const statusFeedback = document.getElementById('statusFeedback');
+    const lastStamp      = document.getElementById('lastStamp');
+    const btnConnect     = document.getElementById('btnConnect');
+    const dotWS          = document.getElementById('dotWS');
+    const dotHW          = document.getElementById('dotHW');
+
+    // =====================
+    // Servo map UI (0..5)
+    // =====================
+    const servoLogicMap = [
+      { index: 0, name: 'BASE' },
+      { index: 1, name: 'ARM' },
+      { index: 2, name: 'FOREARM' },
+      { index: 3, name: 'WRIST_VERT' },
+      { index: 4, name: 'WRIST_ROT' },
+      { index: 5, name: 'GRIPPER' },
+    ];
+    const internalToHardware = idx => (idx >= 0 && idx <= 5) ? idx : -1;
+    const hardwareToInternal = ch  => (ch  >= 0 && ch  <= 5) ? ch  : -1;
+
+    const stampNow = el => { if (el) el.textContent = new Date().toLocaleTimeString(); };
+    const setWSIcon = state => { dotWS.className = 'dot ' + (state==='ok'?'ok': state==='warn'?'warn': state==='err'?'err':'off'); };
+    const setHWIcon = state => { dotHW.className = 'dot ' + (state==='ok'?'ok': state==='warn'?'warn': state==='err'?'err':'off'); };
+
+    // =====================
+    // State
+    // =====================
+    let ws = null;
+    let socketConnected = false;
+    let hardwareConnected = false;
+    let closingByUs = false;
+
+    // Auto-reconnect
+    let reconnectAttempts = 0;
+    const RECONNECT_MAX_DELAY_MS = 10000;
+    const RECONNECT_BASE_MS = 800;
+    let reconnectTimer = null;
+
+    // Heartbeat
+    let hbTimer = null;
+    let hbTimeout = null;
+    const HB_INTERVAL_MS = 10000;
+    const HB_TIMEOUT_MS  = 20000;
+
+    // Throttle sliders
+    const desiredAngles = {}; // ch -> angle
+    let sendScheduled = false;
+
+    // Offline simulation
+    let simTimer = null;
+    function startSim(){
+      stopSim();
+      // Place a simple SVG as placeholder so the frame shows something
+      liveView.src = 'data:image/svg+xml;base64,'+btoa(`<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"640\" height=\"360\"><rect width=\"100%\" height=\"100%\" fill=\"#111\"/><text x=\"50%\" y=\"50%\" fill=\"#aaa\" font-family=\"monospace\" font-size=\"20\" text-anchor=\"middle\" dominant-baseline=\"middle\">Offline preview</text></svg>`);
+      simTimer = setInterval(()=>{
+        const sensors = {
+          ax: +(Math.random()*0.2-0.1).toFixed(3),
+          ay: +(Math.random()*0.2-0.1).toFixed(3),
+          az: +(9.7+Math.random()*0.4).toFixed(3),
+          gx: +(Math.random()*0.02-0.01).toFixed(3),
+          gy: +(Math.random()*0.02-0.01).toFixed(3),
+          gz: +(Math.random()*0.02-0.01).toFixed(3),
+          SONAR: +(100+Math.random()*50).toFixed(2),
+          AN0: Math.floor(400+Math.random()*300),
+          AN1: Math.floor(400+Math.random()*300),
+          AN2: Math.floor(400+Math.random()*300),
+          TEMP: +(26+Math.random()*4).toFixed(2),
+        };
+        renderSensors(sensors);
+        rawLine.textContent = '#SENS|MPU:'+[sensors.ax,sensors.ay,sensors.az,sensors.gx,sensors.gy,sensors.gz].join(',')+'|AN:'+[sensors.AN0,sensors.AN1,sensors.AN2].join(',')+'|SONAR:'+sensors.SONAR;
+        stampNow(lastStamp);
+      }, 1000);
+      statusFeedback.textContent = 'UI carregada (offline)';
+      setHWIcon('off');
+    }
+    function stopSim(){ if (simTimer) clearInterval(simTimer), simTimer=null; }
+
+    // =====================
+    // UI Build
+    // =====================
+    function buildUI(){
+      controls.innerHTML = '';
+      angleGrid.innerHTML = '';
+      servoLogicMap.forEach(servo=>{
+        const wrapper = document.createElement('div');
+        wrapper.className = 'servo';
+        wrapper.innerHTML = `
+          <label>${servo.name} <span id="v${servo.index}">90°</span></label>
+          <input type="range" id="s${servo.index}" min="0" max="180" value="90" aria-label="${servo.name}" />`;
+        controls.appendChild(wrapper);
+
+        const slider = wrapper.querySelector('input');
+        slider.addEventListener('input', e=>{
+          const angle = parseInt(e.target.value,10);
+          document.getElementById('v'+servo.index).textContent = angle + '°';
+          const ch = internalToHardware(servo.index);
+          if (ch !== -1){ desiredAngles[ch] = angle; scheduleSend(); }
+          // Atualiza pill
+          const pill = document.getElementById('ang'+servo.index);
+          if (pill) pill.textContent = `${servo.name}: ${angle}°`;
+        });
+
+        const pill = document.createElement('span');
+        pill.id = 'ang'+servo.index;
+        pill.className = 'pill';
+        pill.textContent = `${servo.name}: 90°`;
+        angleGrid.appendChild(pill);
+      });
+
+      // Wire buttons (delegation)
+      document.querySelectorAll('[data-toggle]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const feat = btn.getAttribute('data-toggle');
+          if (ws?.readyState === 1) safeSend({ toggle: String(feat) });
+          else alert('Offline: toggle '+feat);
+        });
+      });
+      document.querySelectorAll('[data-action]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const idx = Number(btn.getAttribute('data-action'));
+          if (ws?.readyState === 1) safeSend({ action: idx });
+          else alert('Offline: Action '+idx);
+        });
+      });
+      document.querySelectorAll('[data-camera]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const dir = btn.getAttribute('data-camera');
+          if (ws?.readyState === 1) safeSend({ camera: String(dir) });
+          else alert('Offline: Camera '+dir);
+        });
+      });
+
+      btnConnect.addEventListener('click', onConnectToggle);
+    }
+
+    function onConnectToggle(){
+      if (socketConnected){
+        // Se conectado e HW ainda não pronto, primeiro clique tenta connect:true; segundo, fecha.
+        if (!hardwareConnected){ safeSend({ connect: true }); statusFeedback.textContent = 'Requesting Hardware connection...'; return; }
+        cleanDisconnect('Manual disconnect');
+      } else {
+        openSocket();
+      }
+    }
+
+    // =====================
+    // Send throttle (~30 Hz)
+    // =====================
+    function scheduleSend(){
+      if (sendScheduled) return;
+      sendScheduled = true;
+      setTimeout(()=>{
+        if (ws?.readyState === 1){
+          for (const chStr in desiredAngles){
+            const ch = Number(chStr);
+            const angle = desiredAngles[ch];
+            if (!Number.isNaN(ch) && !Number.isNaN(angle)) safeSend({ servo: ch, angle });
+          }
+        }
+        sendScheduled = false;
+      }, 33);
+    }
+
+    // =====================
+    // Socket lifecycle
+    // =====================
+    function openSocket(){
+      clearTimeout(reconnectTimer); reconnectTimer=null; stopSim();
+      try { ws?.close(); } catch {}
+      ws = null; closingByUs=false;
+
+      setWSIcon('warn'); setHWIcon('off');
+      wsStatus.textContent = 'WebSocket: Connecting...';
+      statusFeedback.textContent = 'Opening WebSocket...';
+      btnConnect.disabled = true;
+
+      ws = new WebSocket(WS_URL);
+
+      ws.onopen = () => {
+        socketConnected = true; hardwareConnected = false; reconnectAttempts = 0;
+        setWSIcon('ok'); setHWIcon('off');
+        wsStatus.textContent = 'WebSocket: Connected';
+        statusFeedback.textContent = 'Connected to Processing! Sending handshake...';
+        stampNow(lastStamp); btnConnect.disabled=false; btnConnect.textContent='Disconnect';
+        safeSend({ handshake: true });
+        startHeartbeat();
+      };
+
+      ws.onmessage = handleMessage;
+
+      ws.onerror = (err) => {
+        console.error('WebSocket error:', err);
+        setWSIcon('err'); wsStatus.textContent = 'WebSocket: Error';
+        statusFeedback.textContent = 'WebSocket error! See console.';
+      };
+
+      ws.onclose = () => {
+        if (closingByUs){ cleanDisconnect('Socket closed'); startSim(); return; }
+        cleanDisconnect('Disconnected unexpectedly');
+        scheduleReconnect();
+      };
+    }
+
+    function scheduleReconnect(){
+      reconnectAttempts = Math.min(reconnectAttempts+1, 10);
+      const delay = Math.min(RECONNECT_BASE_MS * Math.pow(1.8, reconnectAttempts-1), RECONNECT_MAX_DELAY_MS);
+      statusFeedback.textContent = `Reconnecting in ${(delay/1000).toFixed(1)}s...`;
+      reconnectTimer = setTimeout(()=>{ openSocket(); }, delay);
+    }
+
+    function cleanDisconnect(reason=''){
+      stopHeartbeat();
+      clearTimeout(reconnectTimer); reconnectTimer=null;
+      socketConnected=false; hardwareConnected=false;
+      try { ws?.close(); } catch {} ws=null;
+      setWSIcon('off'); setHWIcon('off');
+      wsStatus.textContent = 'WebSocket: Disconnected';
+      statusFeedback.textContent = reason || 'Disconnected.';
+      rawLine.textContent = '';
+      stampNow(lastStamp);
+      btnConnect.disabled=false; btnConnect.textContent='Connect';
+    }
+
+    function safeSend(obj){ if (ws && ws.readyState === 1) { try { ws.send(JSON.stringify(obj)); } catch {} } }
+
+    // =====================
+    // Heartbeat
+    // =====================
+    function startHeartbeat(){
+      stopHeartbeat();
+      hbTimer = setInterval(()=>{
+        if (ws?.readyState !== 1) return;
+        safeSend({ ping: Date.now() });
+        clearTimeout(hbTimeout);
+        hbTimeout = setTimeout(()=>{ console.warn('Heartbeat timeout. Closing socket.'); closingByUs=false; try{ ws?.close(); }catch{} }, HB_TIMEOUT_MS);
+      }, HB_INTERVAL_MS);
+    }
+    function stopHeartbeat(){ if (hbTimer) clearInterval(hbTimer), hbTimer=null; if (hbTimeout) clearTimeout(hbTimeout), hbTimeout=null; }
+
+    // =====================
+    // Incoming messages
+    // =====================
+    function handleMessage(ev){
+      let data; try { data = JSON.parse(ev.data); } catch { return; }
+
+      if ('pong' in data) { if (hbTimeout) clearTimeout(hbTimeout); }
+      if ('hardware' in data){
+        hardwareConnected = (data.hardware === 'ready' || data.hardware === true);
+        setHWIcon(hardwareConnected ? 'ok':'warn');
+        statusFeedback.textContent = hardwareConnected ? 'Hardware ready' : 'Hardware not ready';
+      }
+      if ('log' in data){ statusFeedback.textContent = String(data.log); if (/arduino connected|hardware ready/i.test(String(data.log))) { hardwareConnected=true; setHWIcon('ok'); } stampNow(lastStamp); }
+      if ('servo' in data && 'angle' in data){ const ch=Number(data.servo), angle=Number(data.angle); if (!Number.isNaN(ch) && !Number.isNaN(angle)) updateAngle(ch, angle); stampNow(lastStamp); }
+      if ('serial' in data && typeof data.serial === 'string'){ rawLine.textContent = data.serial; if (data.serial.startsWith('#SENS|')) parseSensorsLine(data.serial); }
+      if ('sensors' in data && typeof data.sensors === 'object'){ renderSensors(data.sensors); stampNow(sensStamp); }
+      if ('frame' in data && typeof data.frame === 'string'){ if (data.frame.length <= 2_000_000) liveView.src = 'data:image/jpeg;base64,' + data.frame; }
+      if ('leapEnabled' in data || 'joystickEnabled' in data || 'collisionDetection' in data || 'traceEnabled' in data){
+        const t = [ `Leap: ${data.leapEnabled? 'ON':'OFF'}` , `Joystick: ${data.joystickEnabled? 'ON':'OFF'}` , `Collision: ${data.collisionDetection? 'ON':'OFF'}` , `Trace: ${data.traceEnabled? 'ON':'OFF'}` ].join(' | ');
+        statusFeedback.textContent = t; stampNow(lastStamp);
+      }
+    }
+
+    function updateAngle(ch, val){
+      const idx = hardwareToInternal(ch); if (idx === -1) return;
+      const slider = document.getElementById('s'+idx);
+      const label  = document.getElementById('v'+idx);
+      const pill   = document.getElementById('ang'+idx);
+      const servoName = servoLogicMap[idx]?.name ?? `S${idx}`;
+      if (slider) slider.value = val;
+      if (label)  label.textContent = val + '°';
+      if (pill)   pill.textContent = `${servoName}: ${val}°`;
+    }
+
+    // =====================
+    // Sensors
+    // =====================
+    function parseSensorsLine(raw){
+      const sensorData = {};
+      if (!raw.startsWith('#SENS|')) return;
+      const blocks = raw.slice(6).split('|');
+      for (const block of blocks){
+        const [key, value] = block.split(':'); if (!key || !value) continue;
+        const k = key.trim(); const v = value.trim();
+        if (k === 'MPU'){
+          const m = v.split(',').map(Number);
+          if (m.length >= 3){ sensorData.ax=m[0]; sensorData.ay=m[1]; sensorData.az=m[2]; }
+          if (m.length >= 6){ sensorData.gx=m[3]; sensorData.gy=m[4]; sensorData.gz=m[5]; }
+        } else if (k === 'AN'){
+          const a = v.split(',').map(Number); a.forEach((val,i)=> sensorData['AN'+i]=val );
+        } else if (k === 'SONAR'){
+          const d = Number(v); if (!Number.isNaN(d) && d>0 && d<10000) sensorData.SONAR = d;
+        } else if (k === 'EX1' || k === 'EX2'){
+          sensorData[k] = v.split(',').map(Number);
+        } else {
+          const n = Number(v); sensorData[k] = Number.isNaN(n) ? v : n;
+        }
+      }
+      renderSensors(sensorData);
+      stampNow(sensStamp);
+    }
+
+    function renderSensors(sensors){
+      if (!sensors) return;
+      sensorGrid.innerHTML = '';
+      for (const key in sensors){ if (!Object.hasOwnProperty.call(sensors,key)) continue; let value = sensors[key];
+        if (Array.isArray(value)) value = '['+value.map(v=> typeof v==='number' ? v.toFixed(2) : v).join(', ')+']';
+        else if (typeof value === 'number') value = value.toFixed(2);
+        const cell = document.createElement('div'); cell.className='cell'; cell.textContent = `${key}: ${value}`;
+        sensorGrid.appendChild(cell);
+      }
+      stampNow(sensStamp);
+    }
+
+    // =====================
+    // Boot
+    // =====================
+    buildUI();
+    startSim();
+
+    // exposer (opcional)
+    window._synrov = { openSocket, scheduleReconnect, cleanDisconnect };
+
+    // Graceful close
+    window.addEventListener('beforeunload', ()=>{ closingByUs=true; try{ ws?.close(); }catch{} });
+
+  })();
+  </script>
+</body>
+</html>

@@ -1,7 +1,7 @@
-# SynArm – Robotic Arm Control Platform
+# SynROV – Robotic Arm Control Platform
 
 ## 1. Executive Summary
-SynArm is a multimodal control framework for a 6‑DOF robotic arm that targets low‑cost hobby servos (TD8120MG) driven by a PCA9685 PWM expander.  The project integrates **Leap Motion** gestural input, **joystick/keyboard** fallback, real‑time 3‑D visualisation in Processing 4, and an **Arduino Uno**‑based firmware that also supports a stepper‑driven linear axis and on‑board inertial sensing (MPU6050).
+SynROV is a multimodal control framework for a 6‑DOF robotic arm that targets low‑cost hobby servos (TD8120MG) driven by a PCA9685 PWM expander.  The project integrates **Leap Motion** gestural input, **joystick/keyboard** fallback, real‑time 3‑D visualisation in Processing 4, and an **Arduino Uno**‑based firmware that also supports a stepper‑driven linear axis and on‑board inertial sensing (MPU6050).
 
 <img width="1102" height="682" alt="image" src="https://github.com/user-attachments/assets/fb9e13bb-fe38-436a-b6df-8d8fe9991f72" />
 

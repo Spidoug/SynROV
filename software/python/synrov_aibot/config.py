@@ -1,0 +1,25 @@
+"""Application constants, paths and robot key definitions."""
+
+from ._legacy import (
+    APP_NAME,
+    DEFAULT_URI,
+    APP_DIR,
+    DATA_DIR,
+    FRAME_DIR,
+    MODEL_DIR,
+    DATASET_PATH,
+    MANIP_KEYS,
+    PROCESSING_MANIP_LIMITS,
+    MANIP_INCREMENTAL_TARGET_MODE,
+    MANIP_MODEL_RATE_LIMIT_DPS,
+    MANIP_TRAINING_RATE_LIMIT_DPS,
+    MANIP_MODEL_MIN_DT_S,
+    MANIP_MODEL_MAX_DT_S,
+    MANIP_HINT_PROPORTIONAL_GAIN,
+    VEHICLE_KEYS,
+    DRONE_KEYS,
+    TELEMETRY_KEYS,
+    VOICE_INTENTS,
+    VISION_KEYS,
+    AUDIO_KEYS,
+)

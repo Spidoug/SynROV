@@ -1,0 +1,2093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SynROV Web Console</title>
+  <style>
+    :root {
+      --bg: #08101c;
+      --bg-2: #0c1727;
+      --panel: #111c2f;
+      --panel-2: #16243a;
+      --line: rgba(148, 173, 220, 0.18);
+      --text: #eaf1ff;
+      --muted: #9eb0d1;
+      --blue: #4fa4ff;
+      --blue-2: #2d7fe0;
+      --green: #54d38b;
+      --orange: #ffbf59;
+      --red: #ff6d6d;
+      --chip: rgba(255,255,255,0.04);
+      --radius: 16px;
+      --radius-sm: 12px;
+      --shadow: 0 14px 34px rgba(0,0,0,0.28);
+      --font: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      --mono: "SFMono-Regular", ui-monospace, Menlo, Consolas, monospace;
+      --sidebar-width: 360px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at top left, rgba(79,164,255,0.10), transparent 28%),
+        linear-gradient(160deg, #07101a 0%, #0a1321 55%, #0c1727 100%);
+      color: var(--text);
+      font-family: var(--font);
+    }
+
+    body {
+      display: grid;
+      grid-template-columns: minmax(320px, var(--sidebar-width)) 1fr;
+      gap: 0;
+    }
+
+    .sidebar {
+      min-height: 100vh;
+      padding: 18px;
+      background: rgba(7, 12, 21, 0.94);
+      border-right: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+      overflow-y: auto;
+    }
+
+    .main {
+      min-height: 100vh;
+      padding: 18px;
+      overflow-y: auto;
+    }
+
+    .stack { display: grid; gap: 16px; }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(18,29,48,0.95), rgba(10,17,29,0.98));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(148, 173, 220, 0.12);
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+    }
+
+    .panel-header h2,
+    .panel-header h3 {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: 0.01em;
+    }
+
+    .panel-body { padding: 14px 16px 16px; }
+
+    .hero {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: 1.35rem;
+      line-height: 1.1;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.93rem;
+      line-height: 1.5;
+    }
+
+    .row,
+    .button-row,
+    .chip-row,
+    .check-row,
+    .hero-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .grid-2,
+    .grid-3,
+    .stats-grid,
+    .joint-grid,
+    .sensor-grid,
+    .diag-grid,
+    .duty-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .stats-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .joint-grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .sensor-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .diag-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    .duty-grid { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="search"],
+    input[type="file"],
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid rgba(148, 173, 220, 0.18);
+      border-radius: 12px;
+      background: rgba(7, 13, 24, 0.96);
+      color: var(--text);
+      padding: 10px 12px;
+      font: inherit;
+      outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: rgba(79,164,255,0.75);
+      box-shadow: 0 0 0 3px rgba(79,164,255,0.16);
+    }
+
+    input[type="checkbox"] { accent-color: var(--blue); }
+    input[type="range"] { width: 100%; accent-color: var(--blue); }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+      font-family: var(--mono);
+      line-height: 1.45;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid rgba(148, 173, 220, 0.16);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font: inherit;
+      font-weight: 700;
+      color: white;
+      cursor: pointer;
+      background: linear-gradient(180deg, rgba(79,164,255,0.95), rgba(45,127,224,0.96));
+      transition: transform .05s ease, filter .15s ease, opacity .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+
+    button:hover { filter: brightness(1.04); }
+    button:active { transform: translateY(1px); }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+
+    .btn-secondary { background: linear-gradient(180deg, rgba(96,112,142,0.95), rgba(58,72,95,0.95)); }
+    .btn-success { background: linear-gradient(180deg, rgba(84,211,139,0.96), rgba(38,164,97,0.96)); }
+    .btn-warning { background: linear-gradient(180deg, rgba(255,191,89,0.96), rgba(218,143,35,0.96)); color: #08101c; }
+    .btn-danger { background: linear-gradient(180deg, rgba(255,109,109,0.96), rgba(216,71,71,0.96)); }
+    .btn-ghost {
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+    }
+
+    .toggle.active,
+    .quick.active,
+    .action.active {
+      box-shadow: 0 0 0 2px rgba(79,164,255,0.18), inset 0 0 0 1px rgba(255,255,255,0.05);
+    }
+
+    .toggle.active { background: linear-gradient(180deg, rgba(84,211,139,0.96), rgba(38,164,97,0.96)); }
+
+    .badge,
+    .pill,
+    .metric-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 173, 220, 0.16);
+      background: rgba(8, 14, 24, 0.92);
+      color: var(--text);
+      font-size: 0.79rem;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #7c8ba8;
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.04);
+      flex: 0 0 auto;
+    }
+
+    .dot.ok { background: var(--green); }
+    .dot.warn { background: var(--orange); }
+    .dot.err { background: var(--red); }
+    .dot.off { background: #7c8ba8; }
+
+    .muted,
+    .small,
+    .hint {
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+
+    .mono { font-family: var(--mono); }
+
+    .stat {
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(148,173,220,0.12);
+      background: linear-gradient(180deg, rgba(26,41,67,0.62), rgba(10,17,29,0.88));
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 7px;
+    }
+
+    .stat-value {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.99rem;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .joint-card,
+    .sensor-card,
+    .diag-card,
+    .duty-card,
+    .mini-panel {
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(148,173,220,0.12);
+      background: linear-gradient(180deg, rgba(14,22,37,0.98), rgba(8,13,22,0.98));
+    }
+
+    .joint-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .joint-name {
+      font-size: 0.87rem;
+      font-weight: 800;
+      letter-spacing: .03em;
+    }
+
+    .joint-value {
+      color: var(--blue);
+      font-size: 0.86rem;
+      font-family: var(--mono);
+      white-space: nowrap;
+    }
+
+    .joint-sub {
+      margin-top: 8px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .joint-actions {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: 40px 1fr 40px auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .mini-btn {
+      min-width: 40px;
+      padding: 9px 10px;
+      font-weight: 800;
+    }
+
+    .neutral-btn {
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      min-width: 96px;
+    }
+
+    .neutral-btn.active {
+      background: linear-gradient(180deg, rgba(79,164,255,0.98), rgba(45,127,224,0.98));
+      box-shadow: 0 0 0 2px rgba(79,164,255,0.18);
+    }
+
+    .numeric-input {
+      width: 82px;
+      text-align: center;
+      font-family: var(--mono);
+    }
+
+    .viewer {
+      position: relative;
+      overflow: hidden;
+      border-radius: 16px;
+      min-height: 360px;
+      border: 1px solid rgba(148,173,220,0.12);
+      background: #03070d;
+    }
+
+    .viewer img {
+      display: block;
+      width: 100%;
+      height: min(62vh, 640px);
+      object-fit: contain;
+      background: radial-gradient(circle at center, rgba(29,49,83,0.40), rgba(3,7,13,1));
+    }
+
+    .viewer-overlay {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      pointer-events: none;
+    }
+
+    .viewer-pill {
+      pointer-events: auto;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(7,12,20,0.88);
+      border: 1px solid rgba(148,173,220,0.16);
+      backdrop-filter: blur(10px);
+      font-size: .79rem;
+    }
+
+    .log-box,
+    .raw-box {
+      border-radius: 14px;
+      border: 1px solid rgba(148,173,220,0.12);
+      background: rgba(6,10,18,0.96);
+      color: #d8e3ff;
+      font-family: var(--mono);
+      padding: 12px;
+      line-height: 1.45;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .log-box { min-height: 220px; max-height: 320px; }
+    .raw-box { min-height: 54px; max-height: 120px; }
+
+    .hidden { display: none !important; }
+
+    .kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      padding: 2px 6px;
+      border-radius: 7px;
+      border: 1px solid rgba(148,173,220,0.16);
+      background: rgba(255,255,255,0.05);
+      font-family: var(--mono);
+      font-size: .75rem;
+      color: var(--text);
+    }
+
+    @media (max-width: 1280px) {
+      .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 980px) {
+      body { grid-template-columns: 1fr; }
+      .sidebar {
+        min-height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .grid-2,
+      .grid-3 { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 720px) {
+      .sidebar, .main { padding: 12px; }
+      .stats-grid,
+      .sensor-grid,
+      .diag-grid,
+      .duty-grid,
+      .joint-grid { grid-template-columns: 1fr; }
+      .viewer img { height: 320px; }
+      .joint-actions { grid-template-columns: 40px 1fr 40px; }
+      .neutral-btn { grid-column: 1 / -1; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="hero">
+      <div>
+        <h1>SynROV Web Console</h1>
+        <p>
+        </p>
+      </div>
+      <div class="hero-badges">
+        <span class="badge"><span class="dot off" id="dotSocket"></span><span id="socketBadge">WebSocket offline</span></span>
+        <span class="badge"><span class="dot off" id="dotHardware"></span><span id="hardwareBadge">Hardware offline</span></span>
+      </div>
+    </div>
+
+    <div class="stack">
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Connection</h2>
+          <span class="badge mono" id="modeBadge">Mode: Manipulator</span>
+        </div>
+        <div class="panel-body stack">
+          <div class="grid-2">
+            <div>
+              <label for="hostInput">Host</label>
+              <input id="hostInput" type="text" spellcheck="false" placeholder="localhost" />
+            </div>
+            <div>
+              <label for="portInput">Port</label>
+              <input id="portInput" type="number" min="1" max="65535" step="1" placeholder="9000" />
+            </div>
+          </div>
+
+          <div>
+            <label for="pathInput">Path</label>
+            <input id="pathInput" type="text" spellcheck="false" placeholder="/" />
+          </div>
+
+          <div>
+            <label for="urlPreview">Resolved WebSocket URL</label>
+            <input id="urlPreview" type="text" readonly />
+          </div>
+
+          <div class="check-row">
+            <label class="check-row" style="margin:0">
+              <input id="reconnectInput" type="checkbox" checked />
+              <span>Reconnect automatically</span>
+            </label>
+            <label class="check-row" style="margin:0">
+              <input id="autoconnectInput" type="checkbox" />
+              <span>Connect on startup</span>
+            </label>
+          </div>
+
+          <div class="button-row">
+            <button id="connectBtn" class="btn-success">Connect WebSocket</button>
+            <button id="hardwareBtn" class="btn-secondary" disabled>Connect hardware</button>
+            <button id="syncBtn" class="btn-secondary" disabled>Sync state</button>
+            <button id="disconnectBtn" class="btn-danger" disabled>Disconnect</button>
+          </div>
+
+          <div class="hint">
+            The active mode always follows what Processing reports. This page does not force robot switching; it tracks the mode selected there.
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Quick commands</h2>
+          <span class="small" id="quickTitle">Manipulator shortcuts</span>
+        </div>
+        <div class="panel-body stack">
+          <div class="grid-2" id="toggleGroup">
+            <button type="button" class="toggle btn-ghost" data-toggle="leap">Leap Motion</button>
+            <button type="button" class="toggle btn-ghost" data-toggle="joystick">Joystick</button>
+            <button type="button" class="toggle btn-ghost" data-toggle="collision">Collision</button>
+            <button type="button" class="toggle btn-ghost" data-toggle="trace">Trace</button>
+          </div>
+
+          <div class="grid-3" id="quickGroup">
+            <button type="button" class="quick btn-secondary" data-quick="up">↑</button>
+            <button type="button" class="quick btn-secondary" data-quick="center">Center</button>
+            <button type="button" class="quick btn-secondary" data-quick="plus">+</button>
+            <button type="button" class="quick btn-secondary" data-quick="left">←</button>
+            <button type="button" class="quick btn-secondary" data-quick="right">→</button>
+            <button type="button" class="quick btn-secondary" data-quick="minus">−</button>
+            <button type="button" class="quick btn-secondary" data-quick="down">↓</button>
+            <button type="button" class="quick btn-secondary" data-quick="hold">Hold</button>
+            <button type="button" class="quick btn-secondary" data-quick="reset">Reset</button>
+          </div>
+
+          <div class="grid-2">
+            <button type="button" class="action btn-ghost" data-action="1">Action 1</button>
+            <button type="button" class="action btn-ghost" data-action="2">Action 2</button>
+            <button type="button" class="action btn-ghost" data-action="3">Action 3</button>
+            <button type="button" class="action btn-ghost" data-action="4">Action 4</button>
+            <button type="button" class="action btn-ghost" data-action="5">Action 5</button>
+          </div>
+
+          <div class="hint">
+            Keyboard on this page: <span class="kbd">←</span> <span class="kbd">→</span> <span class="kbd">↑</span> <span class="kbd">↓</span> and <span class="kbd">[</span> <span class="kbd">]</span>.
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Raw channel</h2>
+          <span class="small">Runtime and serial</span>
+        </div>
+        <div class="panel-body stack">
+          <div>
+            <label for="runtimeInput">Command</label>
+            <textarea id="runtimeInput" spellcheck="false" placeholder="Examples:&#10;READY?&#10;HOME&#10;ARMJ=0,105,-5,0,5,40,90,0,0,0,0"></textarea>
+          </div>
+          <div class="button-row">
+            <button id="sendRuntimeBtn">Send</button>
+            <button id="readyBtn" class="btn-secondary">READY?</button>
+            <button id="homeBtn" class="btn-secondary">HOME</button>
+            <button id="takeoffBtn" class="btn-secondary">TAKEOFF</button>
+            <button id="landBtn" class="btn-warning">LAND</button>
+          </div>
+          <div class="hint">
+            The runtime uses unified JSON. HOME, TAKEOFF, LAND, READY?, and valid ARMJ commands are converted automatically; other raw commands are blocked to avoid breaking communication.
+          </div>
+        </div>
+      </section>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="stack">
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Overview</h2>
+          <span class="small" id="lastUpdate">Last update: never</span>
+        </div>
+        <div class="panel-body stack">
+          <div class="stats-grid">
+            <div class="stat">
+              <div class="stat-label">Selected mode</div>
+              <div class="stat-value"><span class="dot ok" id="modeDot"></span><span id="modeStat">Manipulator</span></div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Detected robot</div>
+              <div class="stat-value"><span id="robotStat">Manipulator</span></div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Control owner</div>
+              <div class="stat-value"><span id="ownerStat">NONE</span></div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Joystick</div>
+              <div class="stat-value"><span id="joystickStat">Type 1</span></div>
+            </div>
+          </div>
+
+          <div class="chip-row" id="stateChips"></div>
+          <div class="raw-box" id="statusLine">Waiting for data.</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Active robot controls</h2>
+          <span class="small" id="controlsTitle">Manipulator</span>
+        </div>
+        <div class="panel-body stack">
+          <div id="manipulatorPanel" class="stack">
+            <div class="joint-grid" id="jointGrid"></div>
+
+            <div class="mini-panel stack">
+              <div class="row" style="justify-content: space-between">
+                <div>
+                  <div class="joint-name">ARMJ auxiliary PWM</div>
+                  <div class="small">Channels 12 to 15 are included in the same arm packet.</div>
+                </div>
+                <button id="dutyResetBtn" class="btn-secondary">Zero PWM</button>
+              </div>
+              <div class="duty-grid" id="dutyEditor"></div>
+            </div>
+          </div>
+
+          <div id="vehiclePanel" class="hidden stack">
+            <div class="joint-grid" id="vehicleGrid"></div>
+          </div>
+
+          <div id="dronePanel" class="hidden stack">
+            <div class="joint-grid" id="droneGrid"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Live view</h2>
+          <div class="chip-row">
+            <span class="badge mono" id="frameBadge">Frame: stopped</span>
+            <span class="badge mono" id="sensorStamp">Sensors: --</span>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="viewer">
+            <img id="liveView" alt="SynROV live view" />
+            <div class="viewer-overlay">
+              <div class="viewer-pill mono" id="viewerMode">Mode: Manipulator</div>
+              <div class="viewer-pill mono" id="viewerHardware">Hardware: disconnected</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="grid-2">
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Sensors</h2>
+            <div class="button-row">
+              <input id="sensorFilter" type="search" placeholder="Filter sensors" style="min-width: 200px" />
+              <button id="copySensorsBtn" class="btn-secondary">Copy JSON</button>
+            </div>
+          </div>
+          <div class="panel-body stack">
+            <div class="small" id="sensorSummary">No sensor packet received yet.</div>
+            <div class="sensor-grid" id="sensorGrid"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Diagnostics</h2>
+            <span class="small">Duty, offset, span, ramp, and PID</span>
+          </div>
+          <div class="panel-body stack">
+            <div class="duty-grid" id="dutyGrid"></div>
+            <div class="diag-grid" id="diagGrid"></div>
+          </div>
+        </section>
+      </div>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Log and serial</h2>
+          <button id="clearLogBtn" class="btn-secondary">Clear log</button>
+        </div>
+        <div class="panel-body stack">
+          <div class="log-box" id="logBox"></div>
+          <div>
+            <label for="rawLine">Last serial line</label>
+            <div class="raw-box" id="rawLine"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const MODE_MANIPULATOR = 'Manipulator';
+      const MODE_VEHICLE = 'Vehicle';
+      const MODE_DRONE = 'Drone';
+
+      const STORAGE_KEY = 'synrov-web-console';
+      const DEFAULT_PORT = 9000;
+      const HEARTBEAT_MS = 10000;
+      const SEND_THROTTLE_MS = 80;
+      const RECONNECT_BASE_MS = 800;
+      const RECONNECT_MAX_MS = 10000;
+
+      const MANIP_NAMES = ['Base', 'Upper arm', 'Forearm', 'Forearm roll', 'Vertical wrist', 'Wrist rotation', 'Gripper'];
+      const MANIP_UNITS = ['°', '°', '°', '°', '°', '°', '°'];
+
+      const MANIP_LIMITS_DEFAULT = [
+        { min: 0, max: 359, step: 1 },
+        { min: 0, max: 180, step: 1 },
+        { min: 0, max: 180, step: 1 },
+        { min: 0, max: 180, step: 1 },
+        { min: 0, max: 180, step: 1 },
+        { min: 0, max: 180, step: 1 },
+        { min: 0, max: 180, step: 1 }
+      ];
+
+      const VEHICLE_DEFS = [
+        { key: 'throttle', label: 'Throttle', min: -100, max: 100, step: 1, unit: '%' },
+        { key: 'steer', label: 'Steer', min: -100, max: 100, step: 1, unit: '%' },
+        { key: 'camPan', label: 'Camera pan', min: -90, max: 90, step: 1, unit: '°' },
+        { key: 'camTilt', label: 'Camera tilt', min: -45, max: 45, step: 1, unit: '°' }
+      ];
+
+      const DRONE_DEFS = [
+        { key: 'throttle', label: 'Throttle', min: -100, max: 100, step: 1, unit: '%' },
+        { key: 'yaw', label: 'Yaw', min: -100, max: 100, step: 1, unit: '%' },
+        { key: 'pitch', label: 'Pitch', min: -100, max: 100, step: 1, unit: '%' },
+        { key: 'roll', label: 'Roll', min: -100, max: 100, step: 1, unit: '%' },
+        { key: 'strafe', label: 'Strafe', min: -100, max: 100, step: 1, unit: '%' },
+        { key: 'forward', label: 'Forward', min: -100, max: 100, step: 1, unit: '%' }
+      ];
+
+      const el = {
+        hostInput: document.getElementById('hostInput'),
+        portInput: document.getElementById('portInput'),
+        pathInput: document.getElementById('pathInput'),
+        urlPreview: document.getElementById('urlPreview'),
+        reconnectInput: document.getElementById('reconnectInput'),
+        autoconnectInput: document.getElementById('autoconnectInput'),
+        connectBtn: document.getElementById('connectBtn'),
+        hardwareBtn: document.getElementById('hardwareBtn'),
+        syncBtn: document.getElementById('syncBtn'),
+        disconnectBtn: document.getElementById('disconnectBtn'),
+        modeBadge: document.getElementById('modeBadge'),
+        socketBadge: document.getElementById('socketBadge'),
+        hardwareBadge: document.getElementById('hardwareBadge'),
+        dotSocket: document.getElementById('dotSocket'),
+        dotHardware: document.getElementById('dotHardware'),
+        quickTitle: document.getElementById('quickTitle'),
+        runtimeInput: document.getElementById('runtimeInput'),
+        sendRuntimeBtn: document.getElementById('sendRuntimeBtn'),
+        readyBtn: document.getElementById('readyBtn'),
+        homeBtn: document.getElementById('homeBtn'),
+        takeoffBtn: document.getElementById('takeoffBtn'),
+        landBtn: document.getElementById('landBtn'),
+        lastUpdate: document.getElementById('lastUpdate'),
+        modeDot: document.getElementById('modeDot'),
+        modeStat: document.getElementById('modeStat'),
+        robotStat: document.getElementById('robotStat'),
+        ownerStat: document.getElementById('ownerStat'),
+        joystickStat: document.getElementById('joystickStat'),
+        stateChips: document.getElementById('stateChips'),
+        statusLine: document.getElementById('statusLine'),
+        controlsTitle: document.getElementById('controlsTitle'),
+        manipulatorPanel: document.getElementById('manipulatorPanel'),
+        vehiclePanel: document.getElementById('vehiclePanel'),
+        dronePanel: document.getElementById('dronePanel'),
+        jointGrid: document.getElementById('jointGrid'),
+        dutyEditor: document.getElementById('dutyEditor'),
+        dutyResetBtn: document.getElementById('dutyResetBtn'),
+        vehicleGrid: document.getElementById('vehicleGrid'),
+        droneGrid: document.getElementById('droneGrid'),
+        liveView: document.getElementById('liveView'),
+        frameBadge: document.getElementById('frameBadge'),
+        sensorStamp: document.getElementById('sensorStamp'),
+        viewerMode: document.getElementById('viewerMode'),
+        viewerHardware: document.getElementById('viewerHardware'),
+        sensorFilter: document.getElementById('sensorFilter'),
+        copySensorsBtn: document.getElementById('copySensorsBtn'),
+        sensorSummary: document.getElementById('sensorSummary'),
+        sensorGrid: document.getElementById('sensorGrid'),
+        dutyGrid: document.getElementById('dutyGrid'),
+        diagGrid: document.getElementById('diagGrid'),
+        clearLogBtn: document.getElementById('clearLogBtn'),
+        logBox: document.getElementById('logBox'),
+        rawLine: document.getElementById('rawLine'),
+      };
+
+      const toggleButtons = new Map(Array.from(document.querySelectorAll('[data-toggle]')).map(btn => [btn.dataset.toggle, btn]));
+      const quickButtons = new Map(Array.from(document.querySelectorAll('[data-quick]')).map(btn => [btn.dataset.quick, btn]));
+      const actionButtons = Array.from(document.querySelectorAll('[data-action]'));
+
+      const state = {
+        mode: MODE_MANIPULATOR,
+        robot: MODE_MANIPULATOR,
+        socketConnected: false,
+        hardwareConnected: false,
+        hardwareStatus: 'disconnected',
+        controlOwner: 'none',
+        telemetrySource: 'local',
+        communicationProtocol: 'ascii',
+        leapEnabled: false,
+        leapAvailable: false,
+        joystickEnabled: false,
+        joystickConnected: false,
+        joystickType: 1,
+        joystickTypeLabel: 'Type 1',
+        collisionDetection: true,
+        traceEnabled: true,
+        simulation: false,
+        lastSensors: {},
+        lastFrameAt: 0,
+        manipulator: {
+          angles: [180, 150, 70, 90, 95, 130, 90],
+          neutral: [false, false, false, false, false, false, false],
+          limits: MANIP_LIMITS_DEFAULT.map(item => ({ ...item })),
+          duty: [0, 0, 0, 0]
+        },
+        vehicle: {
+          throttle: 0,
+          steer: 0,
+          camPan: 0,
+          camTilt: 0,
+          lights: false,
+          scan: true
+        },
+        drone: {
+          throttle: 0,
+          yaw: 0,
+          pitch: 0,
+          roll: 0,
+          strafe: 0,
+          forward: 0,
+          camera: false
+        },
+        diagnostics: {
+          duty: {},
+          offset: {},
+          span: {},
+          ramp: {},
+          pid: null
+        },
+        logLines: [],
+        statusMessage: 'Waiting for data.',
+        lastImportantStatus: '',
+        lastImportantStatusAt: 0
+      };
+
+
+      const I18N = {
+        en: {
+          log_error: '[ERROR]', log_warn: '[WARN]', log_info: '[INFO]',
+          quick_manipulator: 'Manipulator shortcuts', quick_vehicle: 'Vehicle shortcuts', quick_drone: 'Drone shortcuts',
+          controls_manipulator: 'Manipulator', controls_vehicle: 'Vehicle', controls_drone: 'Drone',
+          websocket_offline_command: 'WebSocket offline. The command could not be sent.',
+          raw_disabled: 'Raw commands are disabled. Use HOME, TAKEOFF, LAND, READY? or a valid ARMJ command.',
+          sync_sent: 'Synchronization request sent.', ready_as_sync: 'READY? converted to state synchronization.',
+          home_sent: 'HOME sent as a JSON action.', takeoff_sent: 'TAKEOFF sent as a JSON action.', land_sent: 'LAND sent as a JSON action.',
+          runtime_converted: 'Command converted to a unified JSON control block.', runtime_invalid_armj: 'Invalid ARMJ. Expected at least 7 values.',
+          url_opening: 'Opening WebSocket: {url}', ws_connected: 'WebSocket connected.', ws_connected_status: 'WebSocket connected. Sync requested.',
+          ws_error: 'WebSocket error. Check host, port, path and the Processing console.', ws_closed_user: 'WebSocket closed by the user.',
+          ws_closed: 'WebSocket closed.', ws_disconnected: 'WebSocket disconnected.', ws_user_disconnected: 'WebSocket disconnected by the user.',
+          loaded_console: 'SynROV Web Console loaded.', ready_status: 'Ready. Configure the WebSocket endpoint and connect.',
+          on: 'ON', off: 'OFF'
+        }
+      };
+
+      let ws = null;
+      let reconnectTimer = null;
+      let heartbeatTimer = null;
+      let reconnectAttempts = 0;
+      let closedByUser = false;
+      let sendScheduled = false;
+      let offlineTimer = null;
+
+      function nowText() {
+        return new Date().toLocaleTimeString();
+      }
+
+      function touchUpdate(label = 'Last update') {
+        el.lastUpdate.textContent = `${label}: ${nowText()}`;
+      }
+
+      function setDot(node, status) {
+        node.className = `dot ${status}`;
+      }
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function round(value, decimals = 2) {
+        const factor = 10 ** decimals;
+        return Math.round(Number(value) * factor) / factor;
+      }
+
+      function normalizeAbsolute(angle) {
+        let wrapped = Number(angle) % 360;
+        if (wrapped < 0) wrapped += 360;
+        if (wrapped >= 360) wrapped -= 360;
+        return wrapped;
+      }
+
+      function normalizeSigned(angle) {
+        let wrapped = Number(angle) % 360;
+        if (wrapped > 180) wrapped -= 360;
+        if (wrapped <= -180) wrapped += 360;
+        return wrapped;
+      }
+
+      function escapeHtml(text) {
+        return String(text)
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#39;');
+      }
+
+      function formatAny(value) {
+        if (Array.isArray(value)) {
+          return `[${value.map(item => typeof item === 'number' ? round(item, 3) : String(item)).join(', ')}]`;
+        }
+        if (typeof value === 'number') return String(round(value, 3));
+        if (typeof value === 'boolean') return value ? 'true' : 'false';
+        if (value == null) return 'null';
+        if (typeof value === 'object') {
+          try { return JSON.stringify(value); } catch (_) { return String(value); }
+        }
+        return String(value);
+      }
+
+      function currentLanguage() {
+        return 'en';
+      }
+
+      function t(key, vars = {}) {
+        const lang = currentLanguage();
+        let text = (I18N[lang] && I18N[lang][key]) || (I18N.en && I18N.en[key]) || key;
+        Object.keys(vars || {}).forEach(name => { text = text.replaceAll(`{${name}}`, String(vars[name])); });
+        return text;
+      }
+
+      function boolText(value) { return value ? t('on') : t('off'); }
+
+      function applyLanguage() {
+        document.documentElement.lang = 'en';
+        labelQuickButtons();
+        setControlPanels();
+        renderConnectionState();
+        renderOverview();
+      }
+
+      function translateLogMessage(message) {
+        return String(message || '');
+      }
+
+      function logLine(message, type = 'info') {
+        const prefix = type === 'error' ? t('log_error') : type === 'warn' ? t('log_warn') : t('log_info');
+        const line = `${nowText()} ${prefix} ${translateLogMessage(message)}`;
+        state.logLines.unshift(line);
+        state.logLines = state.logLines.slice(0, 140);
+        el.logBox.textContent = state.logLines.join('\n');
+      }
+
+      function setStatus(message) {
+        state.statusMessage = String(message || '—').trim() || '—';
+        el.statusLine.textContent = state.statusMessage;
+        touchUpdate();
+      }
+
+      function currentWsUrl() {
+        const host = (el.hostInput.value || location.hostname || 'localhost').trim();
+        const port = String(el.portInput.value || DEFAULT_PORT).trim();
+        let path = (el.pathInput.value || '/').trim();
+        if (!path.startsWith('/')) path = `/${path}`;
+        const scheme = location.protocol === 'https:' ? 'wss://' : 'ws://';
+        return `${scheme}${host}:${port}${path}`;
+      }
+
+      function saveSettings() {
+        const payload = {
+          host: el.hostInput.value.trim(),
+          port: el.portInput.value.trim(),
+          path: el.pathInput.value.trim(),
+          reconnect: el.reconnectInput.checked,
+          autoconnect: el.autoconnectInput.checked
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      }
+
+      function loadSettings() {
+        let saved = {};
+        try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch (_) { saved = {}; }
+        const params = new URLSearchParams(location.search);
+        el.hostInput.value = params.get('host') || saved.host || location.hostname || 'localhost';
+        el.portInput.value = params.get('port') || saved.port || DEFAULT_PORT;
+        el.pathInput.value = params.get('path') || saved.path || '/';
+        el.reconnectInput.checked = params.has('reconnect') ? params.get('reconnect') !== '0' : saved.reconnect !== false;
+        el.autoconnectInput.checked = params.has('autoconnect') ? params.get('autoconnect') === '1' : !!saved.autoconnect;
+        renderUrlPreview();
+      }
+
+      function renderUrlPreview() {
+        el.urlPreview.value = currentWsUrl();
+      }
+
+      function safeSend(payload) {
+        if (!ws || ws.readyState !== WebSocket.OPEN) return false;
+        try {
+          const outbound = Object.assign({ source: 'synrov_web_console', sentAt: Date.now() }, payload || {});
+          ws.send(JSON.stringify(outbound));
+          return true;
+        } catch (error) {
+          logLine(`Failed to send payload: ${error.message}`, 'error');
+          return false;
+        }
+      }
+
+      function markImportantStatus(message) {
+        const text = String(message || '').trim();
+        if (!text) return;
+        const now = Date.now();
+        if (text === state.lastImportantStatus && (now - state.lastImportantStatusAt) < 1200) return;
+        state.lastImportantStatus = text;
+        state.lastImportantStatusAt = now;
+        setStatus(text);
+      }
+
+      function setControlPanels() {
+        const manip = state.mode === MODE_MANIPULATOR;
+        const vehicle = state.mode === MODE_VEHICLE;
+        const drone = state.mode === MODE_DRONE;
+        el.manipulatorPanel.classList.toggle('hidden', !manip);
+        el.vehiclePanel.classList.toggle('hidden', !vehicle);
+        el.dronePanel.classList.toggle('hidden', !drone);
+        el.controlsTitle.textContent = manip ? t('controls_manipulator') : vehicle ? t('controls_vehicle') : t('controls_drone');
+        el.quickTitle.textContent = manip ? t('quick_manipulator') : vehicle ? t('quick_vehicle') : t('quick_drone');
+      }
+
+      function renderConnectionState() {
+        el.socketBadge.textContent = state.socketConnected ? 'WebSocket online' : 'WebSocket offline';
+        el.hardwareBadge.textContent = state.hardwareConnected ? 'Hardware online' : 'Hardware offline';
+        setDot(el.dotSocket, state.socketConnected ? 'ok' : 'off');
+        setDot(el.dotHardware, state.hardwareConnected ? 'ok' : (state.socketConnected ? 'warn' : 'off'));
+
+        el.connectBtn.textContent = state.socketConnected ? 'Reconectar WebSocket' : 'Connect WebSocket';
+        el.hardwareBtn.disabled = !state.socketConnected;
+        el.hardwareBtn.textContent = state.hardwareConnected ? 'Hardware connected' : 'Connect hardware';
+        el.syncBtn.disabled = !state.socketConnected;
+        el.disconnectBtn.disabled = !state.socketConnected;
+      }
+
+      function renderOverview() {
+        el.modeBadge.textContent = `Mode: ${state.mode}`;
+        el.modeStat.textContent = state.mode;
+        el.robotStat.textContent = state.robot;
+        el.ownerStat.textContent = String(state.controlOwner || 'none').toUpperCase();
+        el.joystickStat.textContent = state.joystickTypeLabel || `Type ${state.joystickType}`;
+        el.viewerMode.textContent = `Mode: ${state.mode}`;
+        el.viewerHardware.textContent = `Hardware: ${state.hardwareConnected ? 'connected' : 'disconnected'}`;
+
+        setDot(el.modeDot, state.mode === MODE_MANIPULATOR ? 'ok' : state.mode === MODE_VEHICLE ? 'warn' : 'err');
+
+        const chips = [
+          `Detected mode: ${state.robot}`,
+          `Telemetry source: ${state.telemetrySource}`,
+          `Communication: ${String(state.communicationProtocol || 'ascii').toUpperCase()}`,
+          `Leap: ${state.leapEnabled ? 'ON' : 'OFF'}${state.leapAvailable ? '' : ' (unavailable)'}`,
+          `Joystick: ${state.joystickEnabled ? 'ON' : 'OFF'}${state.joystickConnected ? ' ✓' : ''}`,
+          `Collision: ${state.collisionDetection ? 'ON' : 'OFF'}`,
+          `Trace: ${state.traceEnabled ? 'ON' : 'OFF'}`,
+          `Simulation: ${state.simulation ? 'ON' : 'OFF'}`
+        ];
+        if (state.mode === MODE_VEHICLE) {
+          chips.push(`Lights: ${state.vehicle.lights ? 'ON' : 'OFF'}`);
+          chips.push(`Scan: ${state.vehicle.scan ? 'ON' : 'OFF'}`);
+        }
+        if (state.mode === MODE_DRONE) {
+          chips.push(`Camera: ${state.drone.camera ? 'ON' : 'OFF'}`);
+        }
+
+        el.stateChips.innerHTML = '';
+        chips.forEach(text => {
+          const span = document.createElement('span');
+          span.className = 'pill';
+          span.textContent = text;
+          el.stateChips.appendChild(span);
+        });
+      }
+
+      function renderToggleButtons() {
+        const toggles = {
+          leap: state.leapEnabled,
+          joystick: state.joystickEnabled,
+          collision: state.collisionDetection,
+          trace: state.traceEnabled
+        };
+        toggleButtons.forEach((button, key) => {
+          button.classList.toggle('active', !!toggles[key]);
+        });
+      }
+
+      function labelQuickButtons() {
+        const en = currentLanguage() === 'en';
+        const labels = state.mode === MODE_MANIPULATOR
+          ? { up: 'Wrist +', down: 'Wrist −', left: 'Base −', right: 'Base +', plus: 'Grip +', minus: 'Grip −', center: 'HOME', hold: 'Hold', reset: 'Reset' }
+          : state.mode === MODE_VEHICLE
+            ? { up: 'Forward +', down: 'Reverse +', left: 'Curve left', right: 'Curve right', plus: state.vehicle.lights ? 'Lights OFF' : 'Lights ON', minus: state.vehicle.scan ? 'Scan OFF' : 'Scan ON', center: 'Stop', hold: 'Hold', reset: 'Reset' }
+            : { up: 'Throttle +', down: 'Throttle −', left: 'Yaw −', right: 'Yaw +', plus: 'Camera ON', minus: 'Camera OFF', center: 'TAKEOFF', hold: 'Hold', reset: 'Zero' };
+
+        quickButtons.forEach((button, key) => { button.textContent = labels[key] || key; });
+      }
+
+      function formatJointValue(index) {
+        const neutral = state.manipulator.neutral[index];
+        const angle = state.manipulator.angles[index];
+        return neutral ? 'Neutral' : `${Math.round(angle)}${MANIP_UNITS[index]}`;
+      }
+
+      function renderManipulatorPanel() {
+        el.jointGrid.innerHTML = '';
+        state.manipulator.angles.forEach((angle, index) => {
+          const limits = state.manipulator.limits[index];
+          const neutral = state.manipulator.neutral[index];
+          const card = document.createElement('div');
+          card.className = 'joint-card';
+          card.innerHTML = `
+            <div class="joint-head">
+              <div class="joint-name">${escapeHtml(MANIP_NAMES[index])}</div>
+              <div class="joint-value" id="jointValue-${index}">${escapeHtml(formatJointValue(index))}</div>
+            </div>
+            <div class="row">
+              <input id="jointSlider-${index}" type="range" min="${limits.min}" max="${limits.max}" step="${limits.step}" value="${angle}" aria-label="${escapeHtml(MANIP_NAMES[index])}" />
+              <input id="jointNumber-${index}" class="numeric-input" type="number" min="${limits.min}" max="${limits.max}" step="${limits.step}" value="${Math.round(angle)}" />
+            </div>
+            <div class="joint-actions">
+              <button type="button" class="mini-btn btn-secondary" data-joint-step="${index}" data-delta="-${limits.step}">−</button>
+              <input id="jointSliderRead-${index}" type="range" min="${limits.min}" max="${limits.max}" step="${limits.step}" value="${angle}" disabled aria-hidden="true" />
+              <button type="button" class="mini-btn btn-secondary" data-joint-step="${index}" data-delta="${limits.step}">+</button>
+              <button type="button" class="neutral-btn ${neutral ? 'active' : ''}" id="neutralBtn-${index}" data-neutral="${index}">Neutral</button>
+            </div>
+            <div class="joint-sub">
+              <span id="jointRange-${index}">Range: ${limits.min} to ${limits.max}${MANIP_UNITS[index]}</span>
+              <span id="jointNeutralText-${index}">${neutral ? 'Locked in neutral' : 'Tracking active'}</span>
+            </div>
+          `;
+          el.jointGrid.appendChild(card);
+        });
+
+        state.manipulator.angles.forEach((_, index) => {
+          const slider = document.getElementById(`jointSlider-${index}`);
+          const number = document.getElementById(`jointNumber-${index}`);
+          const neutralBtn = document.getElementById(`neutralBtn-${index}`);
+
+          slider.addEventListener('input', (event) => {
+            setManipulatorAngleFromUi(index, Number(event.target.value), true);
+          });
+
+          number.addEventListener('change', (event) => {
+            setManipulatorAngleFromUi(index, Number(event.target.value), true);
+          });
+
+          neutralBtn.addEventListener('click', () => toggleJointNeutral(index));
+        });
+
+        Array.from(el.jointGrid.querySelectorAll('[data-joint-step]')).forEach(button => {
+          button.addEventListener('click', () => {
+            const index = Number(button.dataset.jointStep);
+            const delta = Number(button.dataset.delta || 0);
+            nudgeManipulator(index, delta);
+          });
+        });
+
+        renderManipulatorDynamicValues();
+      }
+
+      function renderManipulatorDynamicValues() {
+        state.manipulator.angles.forEach((angle, index) => {
+          const slider = document.getElementById(`jointSlider-${index}`);
+          const number = document.getElementById(`jointNumber-${index}`);
+          const sliderRead = document.getElementById(`jointSliderRead-${index}`);
+          const value = document.getElementById(`jointValue-${index}`);
+          const neutralBtn = document.getElementById(`neutralBtn-${index}`);
+          const neutralText = document.getElementById(`jointNeutralText-${index}`);
+          const rangeText = document.getElementById(`jointRange-${index}`);
+          const limits = state.manipulator.limits[index];
+          const neutral = state.manipulator.neutral[index];
+
+          if (slider) slider.value = String(angle);
+          if (number) number.value = String(Math.round(angle));
+          if (sliderRead) sliderRead.value = String(angle);
+          if (value) value.textContent = formatJointValue(index);
+          if (neutralBtn) neutralBtn.classList.toggle('active', neutral);
+          if (neutralText) neutralText.textContent = neutral ? 'Locked in neutral' : 'Tracking active';
+          if (rangeText) rangeText.textContent = `Range: ${limits.min} to ${limits.max}${MANIP_UNITS[index]}`;
+        });
+      }
+
+      function renderDutyEditor() {
+        el.dutyEditor.innerHTML = '';
+        state.manipulator.duty.forEach((value, index) => {
+          const channel = 12 + index;
+          const card = document.createElement('div');
+          card.className = 'duty-card';
+          card.innerHTML = `
+            <div class="joint-head" style="margin-bottom:10px">
+              <div class="joint-name">Channel ${channel}</div>
+              <div class="joint-value" id="dutyValue-${index}">${value}%</div>
+            </div>
+            <div class="row">
+              <input id="dutySlider-${index}" type="range" min="0" max="100" step="1" value="${value}" aria-label="Channel ${channel} duty" />
+              <input id="dutyNumber-${index}" class="numeric-input" type="number" min="0" max="100" step="1" value="${value}" />
+            </div>
+          `;
+          el.dutyEditor.appendChild(card);
+        });
+
+        state.manipulator.duty.forEach((_, index) => {
+          const slider = document.getElementById(`dutySlider-${index}`);
+          const number = document.getElementById(`dutyNumber-${index}`);
+          slider.addEventListener('input', (event) => setDutyValue(index, Number(event.target.value)));
+          number.addEventListener('change', (event) => setDutyValue(index, Number(event.target.value)));
+        });
+      }
+
+      function renderVehiclePanel() {
+        el.vehicleGrid.innerHTML = '';
+        VEHICLE_DEFS.forEach(def => {
+          const card = createAxisCard(def, state.vehicle[def.key], 'vehicle');
+          el.vehicleGrid.appendChild(card);
+        });
+        bindAxisPanel(VEHICLE_DEFS, 'vehicle');
+      }
+
+      function renderDronePanel() {
+        el.droneGrid.innerHTML = '';
+        DRONE_DEFS.forEach(def => {
+          const card = createAxisCard(def, state.drone[def.key], 'drone');
+          el.droneGrid.appendChild(card);
+        });
+        bindAxisPanel(DRONE_DEFS, 'drone');
+      }
+
+      function createAxisCard(def, value, group) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'joint-card';
+        wrapper.innerHTML = `
+          <div class="joint-head">
+            <div class="joint-name">${escapeHtml(def.label)}</div>
+            <div class="joint-value" id="${group}Value-${def.key}">${Math.round(value)}${def.unit}</div>
+          </div>
+          <div class="row">
+            <input id="${group}Slider-${def.key}" type="range" min="${def.min}" max="${def.max}" step="${def.step}" value="${value}" />
+            <input id="${group}Number-${def.key}" class="numeric-input" type="number" min="${def.min}" max="${def.max}" step="${def.step}" value="${Math.round(value)}" />
+          </div>
+          <div class="joint-actions">
+            <button type="button" class="mini-btn btn-secondary" data-axis-group="${group}" data-axis="${def.key}" data-delta="-${def.step}">−</button>
+            <input type="range" min="${def.min}" max="${def.max}" step="${def.step}" value="${value}" disabled aria-hidden="true" />
+            <button type="button" class="mini-btn btn-secondary" data-axis-group="${group}" data-axis="${def.key}" data-delta="${def.step}">+</button>
+          </div>
+          <div class="joint-sub">
+            <span>Range: ${def.min} to ${def.max}${def.unit}</span>
+            <span id="${group}Meta-${def.key}">Ready</span>
+          </div>
+        `;
+        return wrapper;
+      }
+
+      function bindAxisPanel(defs, group) {
+        defs.forEach(def => {
+          const slider = document.getElementById(`${group}Slider-${def.key}`);
+          const number = document.getElementById(`${group}Number-${def.key}`);
+          slider.addEventListener('input', (event) => setAxisValue(group, def, Number(event.target.value)));
+          number.addEventListener('change', (event) => setAxisValue(group, def, Number(event.target.value)));
+        });
+
+        Array.from(document.querySelectorAll(`[data-axis-group="${group}"]`)).forEach(button => {
+          button.addEventListener('click', () => {
+            const def = defs.find(item => item.key === button.dataset.axis);
+            if (!def) return;
+            setAxisValue(group, def, Number((group === 'vehicle' ? state.vehicle : state.drone)[def.key] || 0) + Number(button.dataset.delta || 0));
+          });
+        });
+      }
+
+      function renderAxisDynamic(group, defs, source) {
+        defs.forEach(def => {
+          const valueNode = document.getElementById(`${group}Value-${def.key}`);
+          const slider = document.getElementById(`${group}Slider-${def.key}`);
+          const number = document.getElementById(`${group}Number-${def.key}`);
+          const value = source[def.key];
+          if (valueNode) valueNode.textContent = `${Math.round(value)}${def.unit}`;
+          if (slider) slider.value = String(value);
+          if (number) number.value = String(Math.round(value));
+        });
+      }
+
+      function renderSensors() {
+        const filter = el.sensorFilter.value.trim().toLowerCase();
+        const keys = Object.keys(state.lastSensors || {}).sort();
+        const visibleKeys = filter ? keys.filter(key => key.toLowerCase().includes(filter)) : keys;
+        el.sensorGrid.innerHTML = '';
+
+        if (!visibleKeys.length) {
+          el.sensorSummary.textContent = keys.length
+            ? `No sensor matches “${filter}”.`
+            : 'No sensor packet received yet.';
+          return;
+        }
+
+        el.sensorSummary.textContent = `${visibleKeys.length} field${visibleKeys.length === 1 ? '' : 's'} displayed${filter ? ` for “${filter}”` : ''}.`;
+
+        visibleKeys.forEach(key => {
+          const card = document.createElement('div');
+          card.className = 'sensor-card';
+          card.innerHTML = `
+            <div class="small" style="text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px">${escapeHtml(key)}</div>
+            <div class="mono" style="font-weight:700">${escapeHtml(formatAny(state.lastSensors[key]))}</div>
+          `;
+          el.sensorGrid.appendChild(card);
+        });
+      }
+
+      function renderDiagnostics() {
+        const dutyKeys = Object.keys(state.diagnostics.duty).sort((a, b) => Number(a) - Number(b));
+        el.dutyGrid.innerHTML = '';
+        if (!dutyKeys.length) {
+          const empty = document.createElement('div');
+          empty.className = 'duty-card';
+          empty.innerHTML = '<div class="small">Duty</div><div class="mono" style="font-weight:700">No duty packet received yet.</div>';
+          el.dutyGrid.appendChild(empty);
+        } else {
+          dutyKeys.forEach(key => {
+            const card = document.createElement('div');
+            card.className = 'duty-card';
+            card.innerHTML = `<div class="small">Channel ${escapeHtml(key)}</div><div class="mono" style="font-weight:700">${escapeHtml(String(state.diagnostics.duty[key]))}%</div>`;
+            el.dutyGrid.appendChild(card);
+          });
+        }
+
+        const items = [];
+        const offsetKeys = Object.keys(state.diagnostics.offset).sort((a, b) => Number(a) - Number(b));
+        const spanKeys = Object.keys(state.diagnostics.span).sort((a, b) => Number(a) - Number(b));
+        const rampKeys = Object.keys(state.diagnostics.ramp).sort((a, b) => Number(a) - Number(b));
+
+        if (state.diagnostics.pid) {
+          items.push({ key: 'PID', value: `Kp=${round(state.diagnostics.pid.kp, 3)} | Ki=${round(state.diagnostics.pid.ki, 3)} | Kd=${round(state.diagnostics.pid.kd, 3)}` });
+        }
+        offsetKeys.forEach(key => items.push({ key: `Offset CH${key}`, value: state.diagnostics.offset[key] }));
+        spanKeys.forEach(key => items.push({ key: `Span CH${key}`, value: state.diagnostics.span[key] }));
+        rampKeys.forEach(key => items.push({ key: `Ramp CH${key}`, value: state.diagnostics.ramp[key] ? 'ON' : 'OFF' }));
+
+        el.diagGrid.innerHTML = '';
+        if (!items.length) {
+          const empty = document.createElement('div');
+          empty.className = 'diag-card';
+          empty.innerHTML = '<div class="small">Diagnostics</div><div class="mono" style="font-weight:700">No packet received yet.</div>';
+          el.diagGrid.appendChild(empty);
+        } else {
+          items.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'diag-card';
+            card.innerHTML = `<div class="small">${escapeHtml(item.key)}</div><div class="mono" style="font-weight:700">${escapeHtml(String(item.value))}</div>`;
+            el.diagGrid.appendChild(card);
+          });
+        }
+      }
+
+      function renderFramePlaceholder(text = 'No stream yet') {
+        const svg = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="960" height="640">
+            <defs>
+              <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+                <stop offset="0%" stop-color="#101a2b" />
+                <stop offset="100%" stop-color="#04070e" />
+              </linearGradient>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#g)" />
+            <circle cx="480" cy="250" r="78" fill="#17263e" stroke="#4fa4ff" stroke-width="3" opacity="0.9" />
+            <text x="50%" y="54%" fill="#e3ecff" font-size="28" font-family="Arial, sans-serif" text-anchor="middle">${escapeHtml(text)}</text>
+            <text x="50%" y="60%" fill="#9eb0d1" font-size="18" font-family="Arial, sans-serif" text-anchor="middle">SynROV Web Console</text>
+          </svg>
+        `;
+        el.liveView.src = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+      }
+
+      function renderAll() {
+        renderConnectionState();
+        renderOverview();
+        renderToggleButtons();
+        labelQuickButtons();
+        setControlPanels();
+        renderManipulatorDynamicValues();
+        renderDutyEditorDynamic();
+        renderAxisDynamic('vehicle', VEHICLE_DEFS, state.vehicle);
+        renderAxisDynamic('drone', DRONE_DEFS, state.drone);
+        renderSensors();
+        renderDiagnostics();
+      }
+
+      function renderDutyEditorDynamic() {
+        state.manipulator.duty.forEach((value, index) => {
+          const valueNode = document.getElementById(`dutyValue-${index}`);
+          const slider = document.getElementById(`dutySlider-${index}`);
+          const number = document.getElementById(`dutyNumber-${index}`);
+          if (valueNode) valueNode.textContent = `${value}%`;
+          if (slider) slider.value = String(value);
+          if (number) number.value = String(value);
+        });
+      }
+
+      function manipServoAngleToMember(index, angle) {
+        const value = Number(angle);
+        if (index === 0) return Math.round(normalizeAbsolute(value - 180));
+        if (index === 1) return Math.round(normalizeSigned(value - 45));
+        if (index === 2) return Math.round(normalizeSigned(value - 180));
+        if (index === 3) return Math.round(normalizeSigned(value - 90));
+        if (index === 4) return Math.round(normalizeSigned(value - 90));
+        if (index === 5) return Math.round(normalizeSigned(value - 90));
+        return Math.round(value);
+      }
+
+      function buildManipulatorRuntime() {
+        const members = state.manipulator.angles.map((angle, index) => state.manipulator.neutral[index] ? 1000 : manipServoAngleToMember(index, angle));
+        const duty = state.manipulator.duty.map(value => clamp(Math.round(Number(value) || 0), 0, 100));
+        return `ARMJ=${members[0]},${members[1]},${members[2]},${members[3]},${members[4]},${members[5]},${members[6]},${duty[0]},${duty[1]},${duty[2]},${duty[3]}`;
+      }
+
+      function buildManipulatorControlPayload() {
+        const angles = state.manipulator.angles.map((angle, index) => {
+          const limits = state.manipulator.limits[index] || MANIP_LIMITS_DEFAULT[index];
+          return clamp(Math.round(Number(angle) || 0), limits.min, limits.max);
+        });
+        const neutral = state.manipulator.neutral.map(value => !!value);
+        const duty = state.manipulator.duty.map(value => clamp(Math.round(Number(value) || 0), 0, 100));
+        return { type: 'control_intent', control: { robot: MODE_MANIPULATOR, manipulator: { angles, neutral, duty } } };
+      }
+
+      function runtimeArmjToControlPayload(command) {
+        const text = String(command || '').trim();
+        const eq = text.indexOf('=');
+        if (eq < 0) return null;
+        const vals = text.slice(eq + 1).split(',').map(part => Number(part.trim()));
+        if (vals.length < 7 || vals.slice(0, 7).some(v => !Number.isFinite(v))) return null;
+        const neutral = vals.slice(0, 7).map(value => value === 1000);
+        const angles = [
+          neutral[0] ? state.manipulator.angles[0] : normalizeAbsolute(vals[0] + 180),
+          neutral[1] ? state.manipulator.angles[1] : clamp(vals[1] + 45, 0, 180),
+          neutral[2] ? state.manipulator.angles[2] : clamp(vals[2] + 180, 0, 180),
+          neutral[3] ? state.manipulator.angles[3] : clamp(vals[3] + 90, 0, 180),
+          neutral[4] ? state.manipulator.angles[4] : clamp(vals[4] + 90, 0, 180),
+          neutral[5] ? state.manipulator.angles[5] : clamp(vals[5] + 90, 0, 180),
+          neutral[6] ? state.manipulator.angles[6] : clamp(vals[6], 0, 180)
+        ].map(v => Math.round(v));
+        const duty = [0, 1, 2, 3].map(i => clamp(Math.round(Number(vals[7 + i] ?? state.manipulator.duty[i]) || 0), 0, 100));
+        return { type: 'control_intent', control: { robot: MODE_MANIPULATOR, manipulator: { angles, neutral, duty } } };
+      }
+
+      function runtimeToJsonPayload(command) {
+        const text = String(command || '').trim();
+        const upper = text.toUpperCase();
+        if (!text) return null;
+        if (upper === 'READY?') return { sync: true, _statusKey: 'ready_as_sync' };
+        if (upper === 'HOME') return { action: 'home', _statusKey: 'home_sent' };
+        if (upper === 'TAKEOFF') return { action: 'takeoff', _statusKey: 'takeoff_sent' };
+        if (upper === 'LAND') return { action: 'land', _statusKey: 'land_sent' };
+        if (upper.startsWith('ARMJ=')) {
+          const payload = runtimeArmjToControlPayload(text);
+          if (!payload) return { _errorKey: 'runtime_invalid_armj' };
+          payload._statusKey = 'runtime_converted';
+          return payload;
+        }
+        return { _errorKey: 'raw_disabled' };
+      }
+
+      function scheduleSend() {
+        if (sendScheduled) return;
+        sendScheduled = true;
+        setTimeout(() => {
+          sendScheduled = false;
+          if (!state.socketConnected) return;
+          if (state.mode === MODE_MANIPULATOR) {
+            safeSend(buildManipulatorControlPayload());
+          } else if (state.mode === MODE_VEHICLE) {
+            safeSend({ type: 'control_intent', control: { robot: MODE_VEHICLE, drive: {
+              throttle: state.vehicle.throttle / 100,
+              steer: state.vehicle.steer / 100,
+              camPan: state.vehicle.camPan,
+              camTilt: state.vehicle.camTilt,
+              lights: !!state.vehicle.lights,
+              lidarScan: !!state.vehicle.scan
+            }}});
+          } else {
+            safeSend({ type: 'control_intent', control: { robot: MODE_DRONE, flight: {
+              throttle: state.drone.throttle / 100,
+              yaw: state.drone.yaw / 100,
+              pitch: state.drone.pitch / 100,
+              roll: state.drone.roll / 100,
+              strafe: state.drone.strafe / 100,
+              forward: state.drone.forward / 100,
+              cameraStreaming: !!state.drone.camera
+            }}});
+          }
+        }, SEND_THROTTLE_MS);
+      }
+
+      function setManipulatorAngleFromUi(index, rawValue, clearNeutral) {
+        const limits = state.manipulator.limits[index];
+        const bounded = clamp(Math.round(Number(rawValue) || 0), limits.min, limits.max);
+        state.manipulator.angles[index] = bounded;
+        if (clearNeutral) state.manipulator.neutral[index] = false;
+        renderManipulatorDynamicValues();
+        scheduleSend();
+      }
+
+      function nudgeManipulator(index, delta) {
+        setManipulatorAngleFromUi(index, Number(state.manipulator.angles[index] || 0) + Number(delta || 0), true);
+      }
+
+      function toggleJointNeutral(index) {
+        state.manipulator.neutral[index] = !state.manipulator.neutral[index];
+        renderManipulatorDynamicValues();
+        scheduleSend();
+      }
+
+      function setDutyValue(index, rawValue) {
+        state.manipulator.duty[index] = clamp(Math.round(Number(rawValue) || 0), 0, 100);
+        renderDutyEditorDynamic();
+        scheduleSend();
+      }
+
+      function setAxisValue(group, def, rawValue) {
+        const target = group === 'vehicle' ? state.vehicle : state.drone;
+        target[def.key] = clamp(Math.round(Number(rawValue) || 0), def.min, def.max);
+        renderAxisDynamic(group, group === 'vehicle' ? VEHICLE_DEFS : DRONE_DEFS, target);
+        scheduleSend();
+      }
+
+      function resetManipulatorDuty() {
+        state.manipulator.duty = [0, 0, 0, 0];
+        renderDutyEditorDynamic();
+        scheduleSend();
+      }
+
+      function sendRuntime(command) {
+        const text = String(command || '').trim();
+        if (!text) return;
+        if (!state.socketConnected) { setStatus(t('websocket_offline_command')); return; }
+        const payload = runtimeToJsonPayload(text);
+        if (!payload || payload._errorKey) {
+          const msg = t(payload && payload._errorKey ? payload._errorKey : 'raw_disabled');
+          setStatus(msg); logLine(msg, 'warn'); return;
+        }
+        const statusKey = payload._statusKey;
+        delete payload._statusKey;
+        safeSend(payload);
+        const msg = statusKey ? t(statusKey) : t('runtime_converted');
+        logLine(`${msg} ${text}`);
+        setStatus(msg);
+      }
+
+      function openSocket() {
+        saveSettings();
+        stopOfflineDemo();
+        clearReconnect();
+        closedByUser = false;
+
+        try {
+          if (ws) ws.close();
+        } catch (_) {}
+
+        const url = currentWsUrl();
+        renderUrlPreview();
+        setDot(el.dotSocket, 'warn');
+        el.socketBadge.textContent = 'Connecting...';
+        setStatus(t('url_opening', { url }));
+        logLine(t('url_opening', { url }));
+
+        try {
+          ws = new WebSocket(url);
+        } catch (error) {
+          logLine(`Failed to create WebSocket: ${error.message}`, 'error');
+          setStatus(`Failed to create WebSocket: ${error.message}`);
+          startOfflineDemo();
+          return;
+        }
+
+        ws.addEventListener('open', () => {
+          state.socketConnected = true;
+          reconnectAttempts = 0;
+          renderConnectionState();
+          safeSend({ client: 'connect' });
+          safeSend({ sync: true });
+          startHeartbeat();
+          setStatus(t('ws_connected_status'));
+          logLine(t('ws_connected'));
+          touchUpdate();
+        });
+
+        ws.addEventListener('message', (event) => handleIncoming(event.data));
+
+        ws.addEventListener('error', () => {
+          logLine('WebSocket error.', 'error');
+          setStatus(t('ws_error'));
+        });
+
+        ws.addEventListener('close', () => {
+          stopHeartbeat();
+          state.socketConnected = false;
+          state.hardwareConnected = false;
+          state.hardwareStatus = 'disconnected';
+          renderConnectionState();
+          renderAll();
+          logLine(closedByUser ? t('ws_closed_user') : t('ws_closed'));
+          if (!closedByUser) scheduleReconnect();
+          else setStatus(t('ws_disconnected'));
+          startOfflineDemo();
+        });
+      }
+
+      function closeSocket() {
+        closedByUser = true;
+        clearReconnect();
+        stopHeartbeat();
+        if (state.socketConnected) safeSend({ client: 'disconnect' });
+        try { if (ws) ws.close(); } catch (_) {}
+        ws = null;
+        state.socketConnected = false;
+        state.hardwareConnected = false;
+        state.hardwareStatus = 'disconnected';
+        renderConnectionState();
+        renderAll();
+        setStatus(t('ws_user_disconnected'));
+        startOfflineDemo();
+      }
+
+      function startHeartbeat() {
+        stopHeartbeat();
+        heartbeatTimer = setInterval(() => {
+          safeSend({ client: 'ping' });
+        }, HEARTBEAT_MS);
+      }
+
+      function stopHeartbeat() {
+        if (heartbeatTimer) clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
+      }
+
+      function scheduleReconnect() {
+        if (!el.reconnectInput.checked) return;
+        reconnectAttempts = Math.min(reconnectAttempts + 1, 10);
+        const delay = Math.min(RECONNECT_BASE_MS * Math.pow(1.8, reconnectAttempts - 1), RECONNECT_MAX_MS);
+        setStatus(`WebSocket dropped. Trying to reconnect in ${(delay / 1000).toFixed(1)} s...`);
+        reconnectTimer = setTimeout(openSocket, delay);
+      }
+
+      function clearReconnect() {
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+
+      function reflectSystem(payload) {
+        if (typeof payload.leapEnabled === 'boolean') state.leapEnabled = payload.leapEnabled;
+        if (typeof payload.leapAvailable === 'boolean') state.leapAvailable = payload.leapAvailable;
+        if (typeof payload.joystickEnabled === 'boolean') state.joystickEnabled = payload.joystickEnabled;
+        if (typeof payload.joystickConnected === 'boolean') state.joystickConnected = payload.joystickConnected;
+        if (typeof payload.collisionDetection === 'boolean') state.collisionDetection = payload.collisionDetection;
+        else if (typeof payload.collisionSetection === 'boolean') state.collisionDetection = payload.collisionSetection;
+        if (typeof payload.controlOwner === 'string') state.controlOwner = payload.controlOwner;
+        if (typeof payload.status === 'string') {
+          state.hardwareStatus = payload.status;
+          state.hardwareConnected = payload.status === 'connected';
+        }
+        if (typeof payload.simulation === 'boolean') state.simulation = payload.simulation;
+        if (typeof payload.telemetrySource === 'string') state.telemetrySource = payload.telemetrySource;
+        if (typeof payload.communicationProtocol === 'string') state.communicationProtocol = payload.communicationProtocol;
+        if (typeof payload.joystickType === 'number') state.joystickType = payload.joystickType;
+        if (typeof payload.joystickTypeLabel === 'string' && payload.joystickTypeLabel) state.joystickTypeLabel = payload.joystickTypeLabel;
+      }
+
+      function reflectMode(payload) {
+        const previousMode = state.mode;
+        if (typeof payload.mode === 'string' && payload.mode) state.mode = payload.mode;
+        if (typeof payload.robot === 'string' && payload.robot) state.robot = payload.robot;
+        if (typeof payload.joystickType === 'number') state.joystickType = payload.joystickType;
+        if (typeof payload.joystickTypeLabel === 'string' && payload.joystickTypeLabel) state.joystickTypeLabel = payload.joystickTypeLabel;
+        if (previousMode !== state.mode) {
+          setControlPanels();
+          labelQuickButtons();
+        }
+      }
+
+      function reflectServoPacket(payload) {
+        const channel = Number(payload.servo);
+        if (!Number.isFinite(channel) || channel < 0 || channel > 6) return;
+        const index = Number.isFinite(Number(payload.memberIndex)) ? Number(payload.memberIndex) : channel;
+        if (index < 0 || index > 6) return;
+        if (Number.isFinite(Number(payload.angle))) {
+          state.manipulator.angles[index] = Number(payload.angle);
+        }
+        if (typeof payload.neutral === 'boolean') {
+          state.manipulator.neutral[index] = payload.neutral;
+        }
+        renderManipulatorDynamicValues();
+      }
+
+      function reflectNeutralPacket(payload) {
+        const arr = payload.neutralMembers;
+        if (!Array.isArray(arr)) return;
+        for (let i = 0; i < 7; i++) {
+          state.manipulator.neutral[i] = !!arr[i];
+        }
+        renderManipulatorDynamicValues();
+      }
+
+      function reflectSensors(sensors) {
+        state.lastSensors = sensors || {};
+        applyManipulatorLimitsFromSensors(sensors || {});
+        el.sensorStamp.textContent = `Sensors: ${nowText()}`;
+
+        if (typeof sensors.light === 'number') state.vehicle.lights = sensors.light > 0.5;
+        if (typeof sensors.lights === 'number') state.vehicle.lights = sensors.lights > 0.5;
+        if (typeof sensors.cam === 'number') state.drone.camera = sensors.cam > 0.5;
+        if (typeof sensors.camrec === 'number') state.drone.camera = sensors.camrec > 0.5;
+        if (typeof sensors.drone_camera === 'number') state.drone.camera = sensors.drone_camera > 0.5;
+      }
+
+      function applyManipulatorLimitsFromSensors(sensors) {
+        for (let i = 0; i < 7; i++) {
+          const minKey = `srvlim_${i}_min`;
+          const maxKey = `srvlim_${i}_max`;
+          if (Object.prototype.hasOwnProperty.call(sensors, minKey) && Object.prototype.hasOwnProperty.call(sensors, maxKey)) {
+            state.manipulator.limits[i].min = i === 0 ? 0 : Number(sensors[minKey]);
+            state.manipulator.limits[i].max = i === 0 ? 359 : Number(sensors[maxKey]);
+          }
+        }
+        renderManipulatorPanel();
+      }
+
+      function resolveIncomingImageSource(payload) {
+        if (!payload || typeof payload !== 'object') return '';
+        const dataUrl = typeof payload.dataUrl === 'string' ? payload.dataUrl.trim() : '';
+        if (dataUrl.startsWith('data:image/')) return dataUrl;
+        const raw = typeof payload.frame === 'string' ? payload.frame.trim() : (typeof payload.image === 'string' ? payload.image.trim() : '');
+        if (!raw || raw.length > 2400000) return '';
+        if (raw.startsWith('data:image/')) return raw;
+        const mime = typeof payload.mime === 'string' && payload.mime.startsWith('image/') ? payload.mime : 'image/jpeg';
+        return `data:${mime};base64,${raw}`;
+      }
+
+      function reflectLog(text) {
+        const message = String(text || '').trim();
+        if (!message) return;
+        logLine(message);
+        markImportantStatus(message);
+
+        if (/trace enabled/i.test(message)) state.traceEnabled = true;
+        if (/trace disabled/i.test(message)) state.traceEnabled = false;
+        if (/vehicle lights:\s*on/i.test(message)) state.vehicle.lights = true;
+        if (/vehicle lights:\s*off/i.test(message)) state.vehicle.lights = false;
+        if (/vehicle lidar:\s*on/i.test(message)) state.vehicle.scan = true;
+        if (/vehicle lidar:\s*off/i.test(message)) state.vehicle.scan = false;
+        if (/drone camera:\s*on/i.test(message)) state.drone.camera = true;
+        if (/drone camera:\s*off/i.test(message)) state.drone.camera = false;
+        if (/leap motion enabled/i.test(message)) state.leapEnabled = true;
+        if (/leap motion disabled/i.test(message)) state.leapEnabled = false;
+        if (/joystick enabled/i.test(message)) state.joystickEnabled = true;
+        if (/joystick disabled/i.test(message)) state.joystickEnabled = false;
+        if (/arduino connected|serial connected|hardware ready/i.test(message)) state.hardwareConnected = true;
+        if (/disconnected|hardware not ready/i.test(message)) state.hardwareConnected = false;
+      }
+
+      function handleIncoming(rawText) {
+        let payload;
+        try {
+          payload = JSON.parse(rawText);
+        } catch (_) {
+          logLine(`Ignored non-JSON packet: ${String(rawText).slice(0, 140)}`, 'warn');
+          return;
+        }
+
+        if (!payload || typeof payload !== 'object') return;
+
+        if ('log' in payload) reflectLog(payload.log);
+        if ('status' in payload || 'controlOwner' in payload || 'webClientConnected' in payload || 'collisionDetection' in payload || 'leapEnabled' in payload || 'telemetrySource' in payload) reflectSystem(payload);
+        if ('mode' in payload || 'robot' in payload || 'joystickType' in payload || 'joystickTypeLabel' in payload) reflectMode(payload);
+        if ('servo' in payload && 'angle' in payload) reflectServoPacket(payload);
+        if (payload.type === 'manipulatorNeutral' || Array.isArray(payload.neutralMembers)) reflectNeutralPacket(payload);
+
+        if ('channel' in payload && 'duty' in payload) {
+          state.diagnostics.duty[payload.channel] = payload.duty;
+          const idx = Number(payload.channel) - 12;
+          if (idx >= 0 && idx < 4) state.manipulator.duty[idx] = clamp(Number(payload.duty) || 0, 0, 100);
+        }
+        if ('channel' in payload && 'offset' in payload) state.diagnostics.offset[payload.channel] = payload.offset;
+        if ('channel' in payload && 'span' in payload) state.diagnostics.span[payload.channel] = payload.span;
+        if ('channel' in payload && 'ramp' in payload) state.diagnostics.ramp[payload.channel] = !!payload.ramp;
+        if ('pid' in payload && payload.pid && typeof payload.pid === 'object') {
+          state.diagnostics.pid = {
+            kp: Number(payload.pid.kp || 0),
+            ki: Number(payload.pid.ki || 0),
+            kd: Number(payload.pid.kd || 0)
+          };
+        }
+        if ('serial' in payload && typeof payload.serial === 'string') {
+          el.rawLine.textContent = payload.serial;
+        }
+        if ('sensors' in payload && payload.sensors && typeof payload.sensors === 'object') {
+          reflectSensors(payload.sensors);
+        }
+        const imageSource = resolveIncomingImageSource(payload);
+        if (imageSource) {
+          state.lastFrameAt = Date.now();
+          el.liveView.src = imageSource;
+          const dimensions = Number.isFinite(Number(payload.width)) && Number.isFinite(Number(payload.height))
+            ? ` ${Number(payload.width)}×${Number(payload.height)}`
+            : '';
+          el.frameBadge.textContent = `Frame: ${nowText()}${dimensions}`;
+        }
+
+        touchUpdate();
+        renderAll();
+      }
+
+      function requestHardwareConnect() {
+        if (!state.socketConnected) return;
+        if (state.hardwareConnected) {
+          safeSend({ sync: true });
+          logLine('Hardware is already connected. State synchronization requested.');
+          setStatus('Hardware is already connected. State synchronization requested.');
+          return;
+        }
+        safeSend({ connect: true });
+        logLine('Hardware connection request sent.');
+        setStatus('Hardware connection request sent.');
+      }
+
+      function requestSync() {
+        if (!state.socketConnected) return;
+        safeSend({ sync: true });
+        logLine(t('sync_sent'));
+        setStatus(t('sync_sent'));
+      }
+
+      function handleToggle(key) {
+        if (!state.socketConnected) {
+          setStatus(`WebSocket offline. Could not toggle ${key}.`);
+          return;
+        }
+        safeSend({ toggle: key });
+        logLine(`Toggle sent: ${key}`);
+      }
+
+      function handleAction(index) {
+        if (!state.socketConnected) {
+          setStatus(`WebSocket offline. Could not trigger Action ${index}.`);
+          return;
+        }
+        safeSend({ action: index });
+        logLine(`Action ${index} requested.`);
+      }
+
+      function handleQuick(key) {
+        if (!state.socketConnected) {
+          setStatus(`WebSocket offline. Could not execute ${key}.`);
+          return;
+        }
+
+        if (state.mode === MODE_MANIPULATOR) {
+          if (key === 'up') return nudgeManipulator(4, +5);
+          if (key === 'down') return nudgeManipulator(4, -5);
+          if (key === 'left') return nudgeManipulator(0, -5);
+          if (key === 'right') return nudgeManipulator(0, +5);
+          if (key === 'plus') return nudgeManipulator(6, +5);
+          if (key === 'minus') return nudgeManipulator(6, -5);
+          if (key === 'center' || key === 'reset') return sendRuntime('HOME');
+          if (key === 'hold') return sendRuntime(buildManipulatorRuntime());
+          return;
+        }
+
+        if (state.mode === MODE_VEHICLE) {
+          if (key === 'up') return setAxisValue('vehicle', VEHICLE_DEFS[0], state.vehicle.throttle + 10);
+          if (key === 'down') return setAxisValue('vehicle', VEHICLE_DEFS[0], state.vehicle.throttle - 10);
+          if (key === 'left') return setAxisValue('vehicle', VEHICLE_DEFS[1], state.vehicle.steer - 10);
+          if (key === 'right') return setAxisValue('vehicle', VEHICLE_DEFS[1], state.vehicle.steer + 10);
+          if (key === 'plus') {
+            state.vehicle.lights = !state.vehicle.lights;
+            renderAll();
+            return scheduleSend();
+          }
+          if (key === 'minus') {
+            state.vehicle.scan = !state.vehicle.scan;
+            renderAll();
+            return scheduleSend();
+          }
+          if (key === 'center') {
+            state.vehicle.throttle = 0;
+            state.vehicle.steer = 0;
+            renderAxisDynamic('vehicle', VEHICLE_DEFS, state.vehicle);
+            return scheduleSend();
+          }
+          if (key === 'hold') {
+            state.vehicle.throttle = 0;
+            state.vehicle.steer = 0;
+            renderAxisDynamic('vehicle', VEHICLE_DEFS, state.vehicle);
+            return scheduleSend();
+          }
+          if (key === 'reset') {
+            state.vehicle.throttle = 0;
+            state.vehicle.steer = 0;
+            state.vehicle.camPan = 0;
+            state.vehicle.camTilt = 0;
+            renderAxisDynamic('vehicle', VEHICLE_DEFS, state.vehicle);
+            return scheduleSend();
+          }
+          return;
+        }
+
+        if (key === 'up') return setAxisValue('drone', DRONE_DEFS[0], state.drone.throttle + 10);
+        if (key === 'down') return setAxisValue('drone', DRONE_DEFS[0], state.drone.throttle - 10);
+        if (key === 'left') return setAxisValue('drone', DRONE_DEFS[1], state.drone.yaw - 10);
+        if (key === 'right') return setAxisValue('drone', DRONE_DEFS[1], state.drone.yaw + 10);
+        if (key === 'plus') {
+          state.drone.camera = true;
+          renderAll();
+          return scheduleSend();
+        }
+        if (key === 'minus') {
+          state.drone.camera = false;
+          renderAll();
+          return scheduleSend();
+        }
+        if (key === 'center') return sendRuntime('TAKEOFF');
+        if (key === 'hold' || key === 'reset') {
+          state.drone.throttle = 0;
+          state.drone.yaw = 0;
+          state.drone.pitch = 0;
+          state.drone.roll = 0;
+          state.drone.strafe = 0;
+          state.drone.forward = 0;
+          renderAxisDynamic('drone', DRONE_DEFS, state.drone);
+          return scheduleSend();
+        }
+      }
+
+      function isTypingTarget(target) {
+        if (!target) return false;
+        const tag = String(target.tagName || '').toLowerCase();
+        return tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable;
+      }
+
+      function handleKeydown(event) {
+        if (isTypingTarget(event.target)) return;
+        if (!state.socketConnected) return;
+        if (event.key === 'ArrowLeft') { event.preventDefault(); handleQuick('left'); }
+        else if (event.key === 'ArrowRight') { event.preventDefault(); handleQuick('right'); }
+        else if (event.key === 'ArrowUp') { event.preventDefault(); handleQuick('up'); }
+        else if (event.key === 'ArrowDown') { event.preventDefault(); handleQuick('down'); }
+        else if (event.key === '[') { event.preventDefault(); handleQuick('minus'); }
+        else if (event.key === ']') { event.preventDefault(); handleQuick('plus'); }
+      }
+
+      function copySensorsJson() {
+        navigator.clipboard.writeText(JSON.stringify(state.lastSensors, null, 2))
+          .then(() => setStatus('Sensor JSON copied.'))
+          .catch(error => setStatus(`Failed to copy sensors: ${error.message}`));
+      }
+
+      function startOfflineDemo() {
+        stopOfflineDemo();
+        renderFramePlaceholder('Waiting for WebSocket connection');
+        offlineTimer = setInterval(() => {
+          if (state.socketConnected) return;
+          state.lastSensors = {
+            battery_pct: round(52 + Math.random() * 38, 1),
+            sonar_cm: round(90 + Math.random() * 70, 2),
+            heading_deg: round(Math.random() * 360, 2),
+            mpu1_ax: round(Math.random() * 0.4 - 0.2, 3),
+            mpu1_ay: round(Math.random() * 0.4 - 0.2, 3),
+            mpu1_az: round(9.6 + Math.random() * 0.5, 3)
+          };
+          el.sensorStamp.textContent = `Sensors: demo ${nowText()}`;
+          renderSensors();
+        }, 1300);
+      }
+
+      function stopOfflineDemo() {
+        if (offlineTimer) clearInterval(offlineTimer);
+        offlineTimer = null;
+      }
+
+      function bindEvents() {
+        [el.hostInput, el.portInput, el.pathInput, el.reconnectInput, el.autoconnectInput].forEach(node => {
+          node.addEventListener('input', () => {
+            renderUrlPreview();
+            saveSettings();
+          });
+          node.addEventListener('change', saveSettings);
+        });
+
+        el.connectBtn.addEventListener('click', openSocket);
+        el.disconnectBtn.addEventListener('click', closeSocket);
+        el.hardwareBtn.addEventListener('click', requestHardwareConnect);
+        el.syncBtn.addEventListener('click', requestSync);
+
+        toggleButtons.forEach((button, key) => button.addEventListener('click', () => handleToggle(key)));
+        quickButtons.forEach((button, key) => button.addEventListener('click', () => handleQuick(key)));
+        actionButtons.forEach(button => button.addEventListener('click', () => handleAction(Number(button.dataset.action))));
+
+        el.sendRuntimeBtn.addEventListener('click', () => sendRuntime(el.runtimeInput.value));
+        el.readyBtn.addEventListener('click', () => sendRuntime('READY?'));
+        el.homeBtn.addEventListener('click', () => sendRuntime('HOME'));
+        el.takeoffBtn.addEventListener('click', () => sendRuntime('TAKEOFF'));
+        el.landBtn.addEventListener('click', () => sendRuntime('LAND'));
+
+        el.runtimeInput.addEventListener('keydown', (event) => {
+          if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+            event.preventDefault();
+            sendRuntime(el.runtimeInput.value);
+          }
+        });
+
+        el.sensorFilter.addEventListener('input', renderSensors);
+        el.copySensorsBtn.addEventListener('click', copySensorsJson);
+        el.clearLogBtn.addEventListener('click', () => {
+          state.logLines = [];
+          el.logBox.textContent = '';
+          logLine('Log cleared.');
+        });
+        el.dutyResetBtn.addEventListener('click', resetManipulatorDuty);
+
+
+        window.addEventListener('keydown', handleKeydown);
+        window.addEventListener('beforeunload', () => {
+          closedByUser = true;
+          try {
+            if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ client: 'disconnect' }));
+          } catch (_) {}
+          try { if (ws) ws.close(); } catch (_) {}
+        });
+      }
+
+      function init() {
+        loadSettings();
+        applyLanguage();
+        bindEvents();
+        renderManipulatorPanel();
+        renderDutyEditor();
+        renderVehiclePanel();
+        renderDronePanel();
+        renderUrlPreview();
+        setControlPanels();
+        renderConnectionState();
+        renderAll();
+        renderFramePlaceholder();
+        startOfflineDemo();
+        logLine(t('loaded_console'));
+        setStatus(t('ready_status'));
+        if (el.autoconnectInput.checked) openSocket();
+      }
+
+      init();
+      window._synrovConsole = {
+        state,
+        openSocket,
+        closeSocket,
+        sendRuntime,
+        buildManipulatorRuntime
+      };
+    })();
+  </script>
+</body>
+</html>

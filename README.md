@@ -326,8 +326,3 @@ A DOCX version is also available as:
 ```text
 docs/SynROV_Operating_Guide.docx
 ```
-## Author
-
-Developed by **Douglas Santana da Silva**.
-
-Contact: `spidoug@gmail.com`

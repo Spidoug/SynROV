@@ -6,6 +6,8 @@ SynROV is a multi-robot control and visualization project that combines embedded
 - **Vehicle**: tracked ground vehicle with left/right track control, camera pan/tilt, lights, LiDAR/scan servo support, incline assist, and low-battery return behavior.
 - **Drone**: quadcopter-style control profile with ESC output, throttle/yaw/pitch/roll/strafe/forward commands, camera record output, takeoff/landing requests, and safety return logic.
 
+  <img width="2556" height="1033" alt="image" src="https://github.com/user-attachments/assets/08edd819-6fb0-43d3-9fb8-2a9f2c930a30" />
+
 The project is designed as a complete experimental robotics stack: the firmware owns real-time hardware I/O and safety behavior, Processing provides the main operator station and 3D simulation/telemetry view, the web console exposes remote browser controls, and the Python AiBot adds voice, vision, dataset collection, and learning-oriented control workflows.
 
 > **Safety note:** SynROV can drive motors, servos, ESCs, and other actuators. Test with power-limited hardware first, keep the robot mechanically supported during configuration, and verify every output channel before operating a real mechanism.
@@ -125,6 +127,11 @@ Open the folder `software/processing/SynROV/` as the Processing sketch.
 
 ### Web console
 
+
+<img width="2538" height="912" alt="image" src="https://github.com/user-attachments/assets/f868ca5b-8abe-4b0e-b830-41a8fc1f97b3" />
+
+
+
 The web console is a single HTML file:
 
 ```text
@@ -138,6 +145,10 @@ ws://localhost:9000/
 ```
 
 ### Python AiBot
+
+
+<img width="1593" height="848" alt="image" src="https://github.com/user-attachments/assets/161339f7-c3a5-4f50-923b-03439600dc0c" />
+
 
 The Python package is under `software/python/`. The current compatibility core imports these packages when available:
 
@@ -226,6 +237,10 @@ ARMJ=base,upper,forearm,forearmRoll,wristPitch,wristRoll,gripper,duty0,duty1,dut
 
 Vehicle runtime commands:
 
+
+<img width="2555" height="1031" alt="image" src="https://github.com/user-attachments/assets/198091eb-8778-41da-b83a-69c9074d1ed2" />
+
+
 ```text
 TRACK=left,right,CAM=pan,tilt
 MOVE=throttle,steer
@@ -234,6 +249,11 @@ SCAN=0/1
 ```
 
 Drone runtime commands:
+
+
+<img width="1108" height="687" alt="image" src="https://github.com/user-attachments/assets/7ff6bf96-8429-46d2-a565-b56639d0f3ea" />
+
+
 
 ```text
 FLY=throttle,yaw,pitch,roll,strafe,forward

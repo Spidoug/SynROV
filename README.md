@@ -147,7 +147,7 @@ ws://localhost:9000/
 ### Python AiBot
 
 
-<img width="1593" height="848" alt="image" src="https://github.com/user-attachments/assets/161339f7-c3a5-4f50-923b-03439600dc0c" />
+<img width="2557" height="1031" alt="Captura de tela 2026-06-08 193250" src="https://github.com/user-attachments/assets/81ba9a30-fcf6-43bd-91a0-ea4251434a0c" />
 
 
 The Python package is under `software/python/`. The current compatibility core imports these packages when available:

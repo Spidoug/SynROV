@@ -1,0 +1,11 @@
+{
+  "schema": "synrov.joystick.v2",
+  "reconnectIntervalMs": 1200,
+  "enableOnStartup": false,
+  "smoothFactor": 0.4000000059604645,
+  "deviceProfiles": {},
+  "deadband": 0.10000000149011612,
+  "pollIntervalMs": 12,
+  "deviceName": "",
+  "matchProfile": "SynROV_joystick"
+}

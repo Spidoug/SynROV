@@ -1,0 +1,156 @@
+{
+  "schema": "synrov.config.v1",
+  "keyboard": {
+    "manipulator": {"servoStepDeg": 1},
+    "drone": {
+      "yawScale": 0.2800000011920929,
+      "forwardScale": 0.3799999952316284,
+      "throttleScale": 0.3400000035762787,
+      "strafeScale": 0.3199999928474426
+    },
+    "vehicle": {
+      "pivotScale": 0.5199999809265137,
+      "steerScale": 0.30000001192092896,
+      "throttleScale": 0.5199999809265137,
+      "cameraPanStepDeg": 1,
+      "cameraTiltStepDeg": 0.800000011920929
+    }
+  },
+  "environment": {
+    "droneDownwardSonar": {
+      "groundReferenceTelemetryKey": "sonar_ground_ref_cm",
+      "clearCollisionSphereWhenOutOfRange": true,
+      "heightTelemetryFallback": "alt_cm",
+      "offset": {
+        "x": 0,
+        "y": 6.900000095367432,
+        "z": 0
+      },
+      "altitudeSource": "firmware_ground_reference_sonar_mpu",
+      "verticalTelemetryKey": "sonar_vertical_cm",
+      "maxDetectionCm": 400,
+      "primaryTelemetryKey": "drone_sonar_down_cm",
+      "mount": "drone_body_bottom",
+      "heightTelemetryKey": "alt_cm",
+      "direction": "local_down"
+    },
+    "scanIntervalMs": 60,
+    "autoScan": {
+      "manipulator": true,
+      "drone": true,
+      "vehicle": true
+    },
+    "pointRadius": 1.7999999523162842,
+    "scanMinCm": 3,
+    "collisionEnabled": false,
+    "manipulatorSonar": {
+      "clearCollisionSphereWhenOutOfRange": true,
+      "maxDetectionCm": 400,
+      "primaryTelemetryKey": "sonar_cm",
+      "mount": "gripper_tip",
+      "direction": "tool_forward"
+    },
+    "scanMaxCm": 260
+  },
+  "system": {
+    "gimbalStabEnabled": false,
+    "vehicleLightsEnabled": false,
+    "droneCameraStreamingEnabled": false,
+    "bootDemoWorldEnabled": false,
+    "vehicleLidarScanEnabled": true,
+    "telemetrySource": "firmware",
+    "selectedRobot": "Manipulator",
+    "theme": "dark",
+    "language": "en",
+    "droneStabilizeEnabled": true,
+    "selectedRobotSource": "manual",
+    "armStabEnabled": false
+  },
+  "serial": {
+    "disconnectTimeoutMs": 12000,
+    "protocol": "hex",
+    "telemetryTimeoutMs": 3200,
+    "readyHandshakeTimeoutMs": 10000,
+    "readyInitialDelayMs": 5000,
+    "openTimeoutMs": 5000,
+    "bootGraceMs": 8000
+  },
+  "websocket": {
+    "imageWidth": 640,
+    "path": "/",
+    "clientTimeoutMs": 15000,
+    "port": 9000,
+    "frameIntervalMs": 200,
+    "controlOwnerTimeoutMs": 2500,
+    "imageHeight": 360
+  },
+  "selectedRobot": "Manipulator",
+  "control": {
+    "manipulator": {
+      "autoHomeDelayMs": 1200,
+      "collision": {
+        "showLocalVolumes": false,
+        "tolerance": 1,
+        "localGuardEnabled": false
+      },
+      "homeAngleToleranceDeg": 4,
+      "poseSendIntervalMs": 33,
+      "poseResendIntervalMs": 120,
+      "autoHomeOnConnect": true,
+      "telemetrySuppressMs": 90
+    },
+    "drone": {
+      "resendIntervalMs": 100,
+      "sendIntervalMs": 33
+    },
+    "vehicle": {
+      "resendIntervalMs": 100,
+      "sendIntervalMs": 33
+    }
+  },
+  "leap": {
+    "manipulator": {
+      "forearmSmooth": 0.029999999329447746,
+      "baseSmooth": 0.05000000074505806,
+      "forearmRollNeutralDeg": 90,
+      "invert": {
+        "wristRot": false,
+        "forearm": false,
+        "wristVert": false,
+        "arm": false,
+        "gripper": false,
+        "forearmRoll": false,
+        "base": false
+      },
+      "poseHand": "right",
+      "forearmRollSmooth": 0.30000001192092896,
+      "swapHands": false,
+      "wristSmooth": 0.30000001192092896,
+      "armSmooth": 0.029999999329447746,
+      "forearmRollCoupling": 0.6499999761581421,
+      "baseHand": "left",
+      "gripperSmooth": 0.15000000596046448
+    },
+    "drone": {
+      "yawScale": 0.550000011920929,
+      "flightHand": "left",
+      "auxHand": "right",
+      "forwardScale": 0.7799999713897705,
+      "throttleScale": 0.699999988079071,
+      "strafeScale": 0.7200000286102295
+    },
+    "vehicle": {
+      "driveHand": "right",
+      "steerScale": 0.6499999761581421,
+      "throttleScale": 0.75,
+      "cameraHand": "left"
+    }
+  },
+  "manipulatorAux": {
+    "baseForcePct": 70,
+    "autoPwmPowerControl": false,
+    "forearmRollForcePct": 50,
+    "forearmForcePct": 50,
+    "upperArmForcePct": 50
+  }
+}

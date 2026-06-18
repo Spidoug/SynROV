@@ -156,6 +156,12 @@ Open the folder `software/processing/SynROV/` as the Processing sketch.
 
 The web console is a single HTML file:
 
+
+<img width="2537" height="905" alt="image" src="https://github.com/user-attachments/assets/ce31e1d5-dfec-4ea4-b17a-9ca9b4c98a1b" />
+
+
+
+
 ```text
 software/web/SynROV.html
 ```

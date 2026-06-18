@@ -2,6 +2,11 @@
 
 SynROV is an experimental multi-robot control and visualization stack. It combines Arduino firmware, a Processing desktop operator console, a browser-based WebSocket console, and a Python AiBot runtime/interface.
 
+<img width="2555" height="1005" alt="image" src="https://github.com/user-attachments/assets/caf5cac2-43aa-470a-af49-8f65c0043273" />
+
+
+
+
 The current source tree supports three robot profiles:
 
 - **Manipulator**: articulated robotic arm with base rotation, upper arm, forearm, forearm roll, wrist pitch, wrist roll, gripper control, collision guarding, grip profiling, stabilization, configurable joint mapping, and auxiliary PWM output fields.

@@ -10,8 +10,20 @@ SynROV is an experimental multi-robot control and visualization stack. It combin
 The current source tree supports three robot profiles:
 
 - **Manipulator**: articulated robotic arm with base rotation, upper arm, forearm, forearm roll, wrist pitch, wrist roll, gripper control, collision guarding, grip profiling, stabilization, configurable joint mapping, and auxiliary PWM output fields.
+
+<img width="1152" height="764" alt="image" src="https://github.com/user-attachments/assets/392fd4a0-be73-4a44-a1ff-e63de6b02152" />
+
+
 - **Vehicle**: tracked ground vehicle with left/right track control, steering/pivot behavior, camera pan/tilt, lights, LiDAR/scan servo support, incline assist, and low-battery return behavior.
+
+<img width="1158" height="754" alt="image" src="https://github.com/user-attachments/assets/e71d42b3-c485-4e44-8a2a-b6b2a6747b7d" />
+
+
 - **Drone**: quadcopter-style control profile with ESC outputs, throttle/yaw/pitch/roll/strafe/forward commands, camera record output, takeoff/landing actions, and safety return logic.
+
+<img width="1162" height="801" alt="image" src="https://github.com/user-attachments/assets/a3657381-6135-4091-8464-2c959d72cdc4" />
+
+
 
 The firmware owns real-time hardware I/O and safety behavior. Processing provides the main 3D operator station, telemetry dashboard, serial bridge, simulation mode, and WebSocket server. The web console exposes browser controls over WebSocket. The Python AiBot adds a Tkinter UI, voice/audio/vision helpers, dataset collection, model training helpers, safety filtering, replay/orchestration utilities, and a dedicated AI runtime.
 

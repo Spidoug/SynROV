@@ -170,6 +170,10 @@ The web console uses a unified JSON control flow. It converts safe actions such 
 
 ### Python AiBot
 
+
+<img width="2557" height="1005" alt="image" src="https://github.com/user-attachments/assets/1057e4b9-6dad-4a77-8b2c-24f1124830f6" />
+
+
 The Python package is under `software/python/` and requires Python `3.10` or newer.
 
 Install the runtime dependencies from the included requirements file:

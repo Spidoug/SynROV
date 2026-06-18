@@ -1,0 +1,13 @@
+joblib>=1.3
+numpy>=1.24
+opencv-python>=4.8
+Pillow>=10.0.0
+scikit-learn>=1.3
+soundcard>=0.4.3
+sounddevice>=0.5.0
+SpeechRecognition>=3.10.0
+websocket-client>=1.8.0
+
+# Optional microphone backend. Install separately if needed, because PyAudio
+# may require system PortAudio headers/packages on Windows, Linux, or macOS.
+# PyAudio>=0.2.14

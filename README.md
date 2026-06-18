@@ -156,7 +156,7 @@ Recommended board target: **Arduino Mega 2560 or compatible**, because the firmw
 
 Install Processing and add the libraries used by `SynROV.pde`:
 
-- Processing <= 4.4.6
+- Processing IDE; version <= 4.4.6
 - Processing Serial library
 - Leap Motion library: `de.voidplus.leapmotion`
 - Game Control Plus: `org.gamecontrolplus`

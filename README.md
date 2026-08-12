@@ -76,7 +76,6 @@ The operator station supports light/dark themes, robot-specific diagnostics, loc
 |---|---|
 | ![SynROV Web Console](docs/images/web-console.png) | ![SynROV AiBot Command Center](docs/images/aibot-command-center.png) |
 
-> The supplied AiBot screenshot records the mixed-language title that motivated this localization audit. The hard-coded Portuguese title visible in that capture is corrected in the source included here.
 
 ![Integrated joystick configuration and live mapping](docs/images/joystick-control-window.png)
 

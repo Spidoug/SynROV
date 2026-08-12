@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "synrov-aibot"
+version = "1"
+description = "SynROV AiBot Version 1 runtime and desktop interface."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Douglas Santana da Silva" }]
+dependencies = [
+    "opencv-python>=4.8",
+    "Pillow>=10.0.0",
+    "SpeechRecognition>=3.10.0",
+    "sounddevice>=0.5.0",
+    "websocket-client>=1.8.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[project.scripts]
+synrov-aibot = "synrov_aibot.main:main"
+
+[tool.setuptools]
+packages = ["synrov_aibot"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+exclude = ["synrov_aibot/runtime_data"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "C4"]
+ignore = ["E501", "B110"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+pythonpath = ["."]

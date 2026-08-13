@@ -201,7 +201,6 @@ docs/
   ROBOT_CAMERA_STREAM.md              camera transport and camera-mode behavior
   ROS_INTEGRATION.md                  ROS 2 / rosbridge integration
   SynROV_Operating_Guide.md           operating guide
-  SynROV_Operating_Guide.docx         Word version of the operating guide
 ```
 
 ## Quick start

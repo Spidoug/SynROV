@@ -1,4 +1,4 @@
-# SynROV — Operating Guide — software version 1
+# SynROV — Operating Guide
 
 <p align="center">
   <img src="images/synrov-logo.png" alt="SynROV logo" width="180">
